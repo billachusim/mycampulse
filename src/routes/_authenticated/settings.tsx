@@ -1,6 +1,6 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuthUser, useProfile } from "@/lib/profile";
 import { toast } from "sonner";
+import { Shield } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   component: Settings,
@@ -23,6 +24,15 @@ function Settings() {
   const [bio, setBio] = useState(profile?.bio ?? "");
   const [avatar, setAvatar] = useState(profile?.avatar_url ?? "");
   const [saving, setSaving] = useState(false);
+
+  const { data: isAdmin } = useQuery({
+    queryKey: ["is-admin", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await supabase.from("user_roles").select("role").eq("user_id", user!.id).eq("role", "admin").maybeSingle();
+      return !!data;
+    },
+  });
 
   async function save() {
     if (!user) return;
@@ -66,7 +76,14 @@ function Settings() {
         </div>
         {profile?.verified && <p className="text-xs text-primary">✓ Verified student (school email)</p>}
         {!profile?.verified && <p className="text-xs text-muted-foreground">Verification: use a school email (.edu / .edu.ng / .ac.uk) to get a verified tick on sign-up.</p>}
+        {profile?.verified && <p className="text-xs text-primary">✓ Verified student (school email)</p>}
+        {!profile?.verified && <p className="text-xs text-muted-foreground">Verification: use a school email (.edu / .edu.ng / .ac.uk) to get a verified tick on sign-up.</p>}
       </div>
+      {isAdmin && (
+        <Link to="/admin" className="mt-4 flex items-center gap-2 rounded-2xl border border-primary/40 bg-card p-4 text-sm font-medium hover:bg-secondary">
+          <Shield className="h-4 w-4 text-primary" /> Open moderation queue
+        </Link>
+      )}
     </AppShell>
   );
 }
