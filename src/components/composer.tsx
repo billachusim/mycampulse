@@ -18,7 +18,7 @@ export function Composer({ open, onOpenChange, defaultCommunityId }: {
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
   const [body, setBody] = useState("");
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [media, setMedia] = useState<UploadedMedia | null>(null);
   const [communityId, setCommunityId] = useState<string>(defaultCommunityId ?? "school");
 
   const { data: communities = [] } = useQuery({
@@ -38,13 +38,13 @@ export function Composer({ open, onOpenChange, defaultCommunityId }: {
   const create = useMutation({
     mutationFn: async () => {
       if (!profile?.id || !profile.primary_school_id) throw new Error("Finish onboarding first");
-      const media = imageUrl ? [{ type: "image", url: imageUrl }] : [];
+      const mediaPayload = media ? [{ type: media.type, url: media.url }] : [];
       const payload = {
         author_id: profile.id,
         school_id: profile.primary_school_id,
         community_id: communityId === "school" ? null : communityId,
         body: body.trim(),
-        media,
+        media: mediaPayload,
       };
       const { error } = await supabase.from("posts").insert(payload);
       if (error) throw error;
@@ -52,7 +52,7 @@ export function Composer({ open, onOpenChange, defaultCommunityId }: {
     onSuccess: () => {
       toast.success("Posted to your campus · +10 Campoints");
       setBody("");
-      setImageUrl(null);
+      setMedia(null);
       onOpenChange(false);
       queryClient.invalidateQueries({ queryKey: ["feed"] });
       queryClient.invalidateQueries({ queryKey: ["wallet"] });
@@ -75,7 +75,7 @@ export function Composer({ open, onOpenChange, defaultCommunityId }: {
           rows={4}
           className="resize-none border-border/60 bg-background text-base"
         />
-        <ImageUploader value={imageUrl} onChange={setImageUrl} folder="posts" label="Add a photo (optional)" />
+        <MediaUploader value={media} onChange={setMedia} folder="posts" label="Add a photo or video (optional)" />
         <div className="flex items-center justify-between gap-3">
           <Select value={communityId} onValueChange={setCommunityId}>
             <SelectTrigger className="w-auto min-w-[10rem] bg-secondary"><SelectValue /></SelectTrigger>
@@ -88,7 +88,7 @@ export function Composer({ open, onOpenChange, defaultCommunityId }: {
               ))}
             </SelectContent>
           </Select>
-          <Button onClick={() => create.mutate()} disabled={(!body.trim() && !imageUrl) || create.isPending} className="brand-gradient text-primary-foreground">
+          <Button onClick={() => create.mutate()} disabled={(!body.trim() && !media) || create.isPending} className="brand-gradient text-primary-foreground">
             {create.isPending ? "Posting…" : "Post"}
           </Button>
         </div>
