@@ -19,7 +19,7 @@ export type FeedPost = {
 };
 
 export const POST_SELECT =
-  "id, body, created_at, like_count, comment_count, hidden, author:profiles!posts_author_id_fkey(id, display_name, avatar_url, verified), school:schools(id, short_name), community:communities(id, name, kind)";
+  "id, body, created_at, like_count, comment_count, hidden, author:profiles!posts_author_id_profiles_fkey(id, display_name, avatar_url, verified), school:schools(id, short_name), community:communities(id, name, kind)";
 
 export function PostCard({ post }: { post: FeedPost }) {
   const { user } = useAuthUser();
