@@ -14,6 +14,76 @@ export type Database = {
   }
   public: {
     Tables: {
+      campoints_balances: {
+        Row: {
+          balance: number
+          lifetime_earned: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          lifetime_earned?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          lifetime_earned?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campoints_balances_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campoints_ledger: {
+        Row: {
+          created_at: string
+          delta: number
+          id: string
+          meta: Json
+          reason: Database["public"]["Enums"]["campoint_reason"]
+          ref_id: string | null
+          ref_type: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          delta: number
+          id?: string
+          meta?: Json
+          reason: Database["public"]["Enums"]["campoint_reason"]
+          ref_id?: string | null
+          ref_type?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          delta?: number
+          id?: string
+          meta?: Json
+          reason?: Database["public"]["Enums"]["campoint_reason"]
+          ref_id?: string | null
+          ref_type?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campoints_ledger_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       comments: {
         Row: {
           author_id: string
@@ -173,6 +243,38 @@ export type Database = {
           {
             foreignKeyName: "conversations_user_b_profiles_fkey"
             columns: ["user_b"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_checkins: {
+        Row: {
+          awarded: number
+          created_at: string
+          day: string
+          streak: number
+          user_id: string
+        }
+        Insert: {
+          awarded?: number
+          created_at?: string
+          day: string
+          streak?: number
+          user_id: string
+        }
+        Update: {
+          awarded?: number
+          created_at?: string
+          day?: string
+          streak?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_checkins_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -413,7 +515,10 @@ export type Database = {
           id: string
           level: string | null
           onboarded: boolean
+          phone: string | null
           primary_school_id: string | null
+          referral_code: string | null
+          referred_by: string | null
           verified: boolean
         }
         Insert: {
@@ -428,7 +533,10 @@ export type Database = {
           id: string
           level?: string | null
           onboarded?: boolean
+          phone?: string | null
           primary_school_id?: string | null
+          referral_code?: string | null
+          referred_by?: string | null
           verified?: boolean
         }
         Update: {
@@ -443,7 +551,10 @@ export type Database = {
           id?: string
           level?: string | null
           onboarded?: boolean
+          phone?: string | null
           primary_school_id?: string | null
+          referral_code?: string | null
+          referred_by?: string | null
           verified?: boolean
         }
         Relationships: [
@@ -466,6 +577,63 @@ export type Database = {
             columns: ["primary_school_id"]
             isOneToOne: false
             referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_referred_by_fkey"
+            columns: ["referred_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      redemptions: {
+        Row: {
+          admin_notes: string | null
+          amount_naira: number
+          amount_points: number
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["redemption_kind"]
+          payload: Json
+          provider_ref: string | null
+          status: Database["public"]["Enums"]["redemption_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          amount_naira: number
+          amount_points: number
+          created_at?: string
+          id?: string
+          kind: Database["public"]["Enums"]["redemption_kind"]
+          payload?: Json
+          provider_ref?: string | null
+          status?: Database["public"]["Enums"]["redemption_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          amount_naira?: number
+          amount_points?: number
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["redemption_kind"]
+          payload?: Json
+          provider_ref?: string | null
+          status?: Database["public"]["Enums"]["redemption_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "redemptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -538,6 +706,45 @@ export type Database = {
         }
         Relationships: []
       }
+      share_clicks: {
+        Row: {
+          channel: string | null
+          created_at: string
+          id: string
+          post_id: string
+          sharer_id: string
+        }
+        Insert: {
+          channel?: string | null
+          created_at?: string
+          id?: string
+          post_id: string
+          sharer_id: string
+        }
+        Update: {
+          channel?: string | null
+          created_at?: string
+          id?: string
+          post_id?: string
+          sharer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "share_clicks_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "share_clicks_sharer_id_fkey"
+            columns: ["sharer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -562,6 +769,17 @@ export type Database = {
     }
     Functions: {
       are_connected: { Args: { _a: string; _b: string }; Returns: boolean }
+      award_campoints: {
+        Args: {
+          _delta: number
+          _meta?: Json
+          _reason: Database["public"]["Enums"]["campoint_reason"]
+          _ref_id?: string
+          _ref_type?: string
+          _user: string
+        }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -572,6 +790,21 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      campoint_reason:
+        | "daily_checkin"
+        | "streak_bonus"
+        | "post"
+        | "comment"
+        | "like_received"
+        | "comment_received"
+        | "referral_qualified"
+        | "referral_first_post"
+        | "share_click"
+        | "profile_complete"
+        | "quest"
+        | "redemption_debit"
+        | "redemption_refund"
+        | "admin_adjust"
       community_kind:
         | "faculty"
         | "department"
@@ -582,6 +815,8 @@ export type Database = {
         | "marketplace"
         | "events"
       connection_status: "pending" | "accepted" | "declined" | "blocked"
+      redemption_kind: "airtime" | "data" | "cash"
+      redemption_status: "pending" | "approved" | "paid" | "failed" | "rejected"
       report_status: "open" | "resolved" | "dismissed"
       report_target: "post" | "comment" | "user"
     }
@@ -712,6 +947,22 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      campoint_reason: [
+        "daily_checkin",
+        "streak_bonus",
+        "post",
+        "comment",
+        "like_received",
+        "comment_received",
+        "referral_qualified",
+        "referral_first_post",
+        "share_click",
+        "profile_complete",
+        "quest",
+        "redemption_debit",
+        "redemption_refund",
+        "admin_adjust",
+      ],
       community_kind: [
         "faculty",
         "department",
@@ -723,6 +974,8 @@ export const Constants = {
         "events",
       ],
       connection_status: ["pending", "accepted", "declined", "blocked"],
+      redemption_kind: ["airtime", "data", "cash"],
+      redemption_status: ["pending", "approved", "paid", "failed", "rejected"],
       report_status: ["open", "resolved", "dismissed"],
       report_target: ["post", "comment", "user"],
     },

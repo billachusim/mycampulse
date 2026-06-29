@@ -15,7 +15,7 @@ export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { title: "Sign in — Campulse" },
-      { name: "description", content: "Sign in to your campus." },
+      { name: "description", content: "Sign in to your campus heartbeat." },
     ],
   }),
   component: AuthPage,
@@ -62,9 +62,9 @@ function AuthPage() {
           <BrandLogo size={44} withWordmark wordmarkClassName="text-2xl" />
         </Link>
         <div>
-          <h1 className="font-display text-5xl leading-tight">Your Campus Online.</h1>
+          <h1 className="font-display text-5xl leading-tight">Your Campus Heartbeat.</h1>
           <p className="mt-4 max-w-md text-muted-foreground">
-            School-first feed. Your school, your communities, your campus trending — without algorithm noise from the whole internet.
+            School-first feed, communities you actually live in, and Campoints that pay you back in airtime and naira for showing up.
           </p>
         </div>
         <p className="text-xs text-muted-foreground">© Campulse · Built for students, by students.</p>

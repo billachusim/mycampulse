@@ -1,7 +1,7 @@
 {
-  "name": "Campulse — Your Campus Online",
+  "name": "Campulse — Your Campus Heartbeat",
   "short_name": "Campulse",
-  "description": "School-first social network for students. Your school, your communities, your campus trending.",
+  "description": "Your Campus Heartbeat. School-first feed, communities, and Campoints that turn campus life into airtime and naira.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

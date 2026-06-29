@@ -46,10 +46,11 @@ export function Composer({ open, onOpenChange, defaultCommunityId }: {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Posted to your campus");
+      toast.success("Posted to your campus · +10 Campoints");
       setBody("");
       onOpenChange(false);
       queryClient.invalidateQueries({ queryKey: ["feed"] });
+      queryClient.invalidateQueries({ queryKey: ["wallet"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });

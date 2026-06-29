@@ -1,48 +1,87 @@
-## Goal
-Populate the app with realistic-but-clearly-dummy data so you can actually feel Campulse working: a fleshed-out profile for you, a roster of fake students, a busy feed across schools, your connections, pending requests, and active message threads.
+## 1. Tagline swap — "Your Campus Heartbeat"
 
-## What gets created
+Replace the current tagline everywhere it surfaces:
+- `src/routes/index.tsx` — landing hero subhead, `head()` title/description, OG/Twitter tags.
+- `src/routes/__root.tsx` — default `<title>` + meta description.
+- `public/manifest.webmanifest` — `description`.
+- `src/routes/auth.tsx` — sidebar tagline.
+- `README`/footer copy referencing "Your campus online".
 
-### 1. Your profile (admin account)
-- Set `display_name`: "Sim Nachu", `handle`: `sim`, `bio`: "Building Campulse · Founder · hops between every campus 👀"
-- Avatar: a DiceBear seeded portrait URL
-- `primary_school_id` → **UNILAG** (so the "Your School" rail isn't empty for you), `verified = true`, `onboarded = true`
-- Join you into UNILAG · Faculty of Engineering, Computer Engineering dept, 400L, and the SUG + Marketplace + Events communities
+Keep "Campulse" as the brand; only the tagline line changes.
 
-### 2. Sixteen dummy students across all 8 schools
-Spread 2 per school, each with:
-- Auth user (placeholder `@campulse.test` email, random password — they will never log in)
-- Profile with display name, handle, bio, DiceBear avatar, faculty/dept/level/hostel, verified flag
-- Memberships in their school + a couple of communities
+## 2. Campoints v1 — strategy
 
-Sample personalities so the feed reads naturally:
-- Ada (UNILAG, 300L CS), Tunde (UNILAG, 200L Mech Eng), Zainab (ABU, 400L Law), Chuka (UNN, 100L Medicine), Bisi (OAU, SUG VP), Kemi (UI, Theatre Arts), Ifeoma (UNIBEN, Pharmacy), Femi (FUTA, Architecture), David (CU, ICT), plus 7 more.
+**Earning rules (rate-limited, anti-spam):**
+| Action | Points | Cap |
+|---|---|---|
+| Daily check-in (open app + tap) | 5 | 1/day |
+| 3-day / 7-day / 30-day streak bonus | 10 / 25 / 100 | streak-based |
+| Create a post | 10 | 5 posts/day count |
+| Comment | 2 | 20/day count |
+| Receive a like on your post | 1 | 50/day count |
+| Receive a comment on your post | 3 | 30/day count |
+| Refer a friend (they sign up + verify school email) | 200 | unlimited |
+| Friend's first post earns | 50 bonus | once per referral |
+| Share a post externally via tracked link (first click from a new device) | 5 | 10/day count |
+| Complete profile (avatar + bio + dept) | 50 | once |
+| First-week onboarding quests | 25–100 each | once |
 
-### 3. ~40 realistic dummy posts
-Mixed across schools, communities, and post types — campus gist, lecture rant, hostel chaos, marketplace listing, event flier, lost-and-found, club recruitment, sports banter, exam-week confession, etc. Marked clearly as dummy in body where natural (e.g. ends with "(dummy seed)"). Sprinkle `like_count` and `comment_count` 0–180 so the **Trending** rail has obvious winners. Posts dated across the last 24 hours so they show up in trending.
+All earn events go through a single `award_campoints(user, reason, amount, ref)` Postgres function that enforces caps server-side. No client can mint points.
 
-### 4. Connections
-- 6 dummy users are **accepted** connections of yours (so Connections tab shows people)
-- 3 dummy users have **pending** requests TO you (so you can accept)
-- 2 dummy users you've sent a request to (still pending)
-- Plus ~10 connections between the dummies themselves
+**Redemption (v1 launch catalog):**
+- **Airtime / Data top-up** (MTN, Glo, Airtel, 9mobile) — pay via VTU provider (Reloadly or Airtimenigeria). Real cost, low fraud risk, instant fulfilment. Default first redemption.
+- **Cash to Naira** — withdraw to bank/Opay via Paystack Transfers. Minimum ₦1,000 (= 10,000 Campoints at ₦0.10/point). Requires verified school email + BVN-linked account name match. Manual approval queue for first 30 days, then auto-approve under threshold.
 
-### 5. Conversations & messages
-- 4 active 1:1 conversations between you and your top connections
-- Each with 4–7 realistic messages, last_message_at staggered across last 2 days so the inbox has unread-ish ordering
-- Sample tone: "yo, are you coming for the SUG debate tonight?", "I dropped the past questions in the group", etc.
+**Conversion rate (starting):** 10 Campoints = ₦1. Tune after pilot.
+**Anti-abuse:** unique phone (OTP) at signup, one account per device fingerprint, manual review for >₦5k/week, school-email verification before any cash-out.
 
-### 6. One open report
-- A dummy user reports a dummy post for "Spam" — so your `/admin` moderation queue shows a real card to act on.
+## 3. What gets built this turn
 
-## How it's delivered
-A single seed migration (idempotent-ish, guarded by `ON CONFLICT DO NOTHING` and stable UUIDs) that:
-1. Inserts 16 rows into `auth.users` with fixed UUIDs and minimal fields (email, encrypted_password placeholder, confirmed_at, raw_user_meta_data).
-2. Inserts matching `profiles` rows.
-3. Inserts memberships, posts, likes-bumped counts, connections, conversations, messages, and the one report.
-4. Updates your existing profile to the rich version described above.
+**Schema (one migration):**
+- `campoints_ledger` — `user_id, delta, reason (enum), ref_type, ref_id, created_at`. Append-only.
+- `campoints_balances` — materialized per-user balance (trigger-maintained for fast reads).
+- `daily_checkins` — `user_id, date`, unique → enforces 1/day.
+- `referrals` — `referrer_id, referred_id, code, status (pending/qualified/rewarded), created_at`.
+- `referral_codes` — one stable code per user (e.g. first 6 chars of UUID + handle).
+- `share_clicks` — `post_id, sharer_id, fingerprint_hash, created_at` for share-reward dedupe.
+- `redemptions` — `user_id, kind (airtime|cash), amount_points, amount_naira, payload jsonb, status (pending/approved/paid/failed/rejected), provider_ref, created_at`.
+- `redemption_quests` — seed table for one-time onboarding quests.
 
-## Notes
-- All dummy emails use `@campulse.test` and a non-functional password hash — they can't actually sign in, they only exist to satisfy FK constraints and look real in the UI.
-- Easy to wipe later: a single `DELETE FROM auth.users WHERE email LIKE '%@campulse.test'` cascades through everything.
-- Nothing in the app code changes — pure data seed.
+Plus a security-definer `award_campoints()` function and triggers on `posts`/`likes`/`comments` that call it with the right cap checks.
+
+GRANTs + RLS on every new public table.
+
+**Server functions (TanStack `createServerFn`, all `requireSupabaseAuth`):**
+- `claimDailyCheckin` — awards check-in + streak bonus.
+- `getMyWallet` — balance, recent ledger, current streak, referral code/stats.
+- `redeemAirtime({ network, phone, amount })` — debits ledger, creates pending `redemption`, calls VTU provider (stubbed if `VTU_API_KEY` not set), updates status.
+- `requestCashOut({ amount, bank_code, account_number, account_name })` — debits ledger, queues for admin approval.
+- `applyReferralCode({ code })` — called during onboarding; sets `referrer_id` on the new user's profile; awards referrer on qualification.
+- `trackShareClick({ post_id, fingerprint })` — public-ish endpoint for tracked share links.
+
+**UI:**
+- `src/routes/_authenticated/wallet.tsx` — Campoints wallet: big balance card, "Claim daily +5" button, streak meter, ledger history, "How to earn" accordion, redemption catalog (Airtime / Data / Cash-out), referral card with shareable link + qualified-vs-pending counts.
+- Wallet entry in the desktop side rail + a coin chip in the top bar showing live balance (links to `/wallet`).
+- `src/routes/_authenticated/redeem.airtime.tsx`, `redeem.cash.tsx` — focused redemption flows with confirmation step.
+- `src/routes/_authenticated/onboarding.tsx` — add optional "Got a referral code?" field; award profile-complete points when finished.
+- `src/routes/_authenticated/admin.tsx` — add a "Cash-out approvals" tab listing pending `redemptions` (approve / reject / mark paid + paste provider ref).
+- `src/components/composer.tsx` — toast on successful post mentions points earned ("+10 Campoints").
+- Landing page — add a "Earn Campoints" strip explaining the program (3 cards: post, refer, cash out).
+
+**Realtime:** subscribe wallet page to `campoints_ledger` inserts for the current user so balance ticks up live.
+
+**Secrets:** none required for the v1 build — VTU + Paystack Transfers ship as stubs that mark redemptions `pending` until you're ready to wire providers. We'll add `PAYSTACK_SECRET_KEY` and a VTU provider key in a follow-up turn when you're ready to flip cash-out live.
+
+## 4. Out of scope (next iterations)
+- Live VTU/Paystack wiring + KYC/BVN check (need provider accounts + secrets).
+- Vendor marketplace (food/printing) and event-ticket redemption — needs a vendor app + QR redemption flow; large surface, separate build.
+- Phone OTP at signup (currently email-only). Recommend adding before cash-out goes live.
+- Leaderboards, badges, level-ups (motivational layer once ledger is in place).
+
+## 5. Marketing rollout I'd suggest alongside this
+- **Campus ambassador program**: top 1 referrer per school each month gets ₦5k bonus; surface a per-school referral leaderboard.
+- **Launch quest week**: "Post 3 times + invite 1 friend = ₦200 airtime instantly" — uses the airtime redemption above.
+- **Class-rep partnerships**: SUG/class reps get a special badge + 2x referral points for first 50 sign-ups in their dept.
+- **WhatsApp-first sharing**: every post has a "Share to WhatsApp" tracked link that pays the sharer per unique click (capped). WhatsApp is how Nigerian campuses actually distribute things.
+
+Want me to also draft the launch-quest copy and an in-app "How Campoints work" page as part of the build? I'll include it if you say yes when approving.

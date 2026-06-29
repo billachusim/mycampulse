@@ -1,9 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { Heart, MessageCircle, Share2, Flag, MoreHorizontal } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuthUser, timeAgo, initials } from "@/lib/profile";
+import { claimShare } from "@/lib/campoints.functions";
 import { toast } from "sonner";
 
 export type FeedPost = {
@@ -24,6 +26,7 @@ export const POST_SELECT =
 export function PostCard({ post }: { post: FeedPost }) {
   const { user } = useAuthUser();
   const queryClient = useQueryClient();
+  const claimShareFn = useServerFn(claimShare);
 
   const { data: liked = false } = useQuery({
     queryKey: ["liked", post.id, user?.id],
@@ -64,13 +67,22 @@ export function PostCard({ post }: { post: FeedPost }) {
 
   async function share() {
     const url = `${window.location.origin}/post/${post.id}`;
+    let channel = "copy";
     if (navigator.share) {
-      try { await navigator.share({ url, title: "Campulse post" }); } catch {}
+      try { await navigator.share({ url, title: "Campulse post" }); channel = "native"; } catch { return; }
     } else {
       await navigator.clipboard.writeText(url);
       toast.success("Link copied");
     }
+    try {
+      const r = await claimShareFn({ data: { postId: post.id, channel } });
+      if (r.awarded > 0) {
+        toast.success(`+${r.awarded} Campoints for sharing`);
+        queryClient.invalidateQueries({ queryKey: ["wallet"] });
+      }
+    } catch { /* silent */ }
   }
+
 
   return (
     <article className="rounded-2xl border border-border/60 bg-card p-4 transition hover:border-border">

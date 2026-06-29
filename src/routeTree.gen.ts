@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
@@ -21,6 +22,8 @@ import { Route as AuthenticatedConnectionsRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedUIdRouteImport } from './routes/_authenticated/u.$id'
 import { Route as AuthenticatedSchoolSchoolIdRouteImport } from './routes/_authenticated/school.$schoolId'
+import { Route as AuthenticatedRedeemCashRouteImport } from './routes/_authenticated/redeem.cash'
+import { Route as AuthenticatedRedeemAirtimeRouteImport } from './routes/_authenticated/redeem.airtime'
 import { Route as AuthenticatedPostIdRouteImport } from './routes/_authenticated/post.$id'
 import { Route as AuthenticatedCommunityIdRouteImport } from './routes/_authenticated/community.$id'
 
@@ -37,6 +40,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedWalletRoute = AuthenticatedWalletRouteImport.update({
+  id: '/wallet',
+  path: '/wallet',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
@@ -85,6 +93,17 @@ const AuthenticatedSchoolSchoolIdRoute =
     path: '/school/$schoolId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedRedeemCashRoute = AuthenticatedRedeemCashRouteImport.update({
+  id: '/redeem/cash',
+  path: '/redeem/cash',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedRedeemAirtimeRoute =
+  AuthenticatedRedeemAirtimeRouteImport.update({
+    id: '/redeem/airtime',
+    path: '/redeem/airtime',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPostIdRoute = AuthenticatedPostIdRouteImport.update({
   id: '/post/$id',
   path: '/post/$id',
@@ -107,8 +126,11 @@ export interface FileRoutesByFullPath {
   '/messages': typeof AuthenticatedMessagesRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/wallet': typeof AuthenticatedWalletRoute
   '/community/$id': typeof AuthenticatedCommunityIdRoute
   '/post/$id': typeof AuthenticatedPostIdRoute
+  '/redeem/airtime': typeof AuthenticatedRedeemAirtimeRoute
+  '/redeem/cash': typeof AuthenticatedRedeemCashRoute
   '/school/$schoolId': typeof AuthenticatedSchoolSchoolIdRoute
   '/u/$id': typeof AuthenticatedUIdRoute
 }
@@ -122,8 +144,11 @@ export interface FileRoutesByTo {
   '/messages': typeof AuthenticatedMessagesRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/wallet': typeof AuthenticatedWalletRoute
   '/community/$id': typeof AuthenticatedCommunityIdRoute
   '/post/$id': typeof AuthenticatedPostIdRoute
+  '/redeem/airtime': typeof AuthenticatedRedeemAirtimeRoute
+  '/redeem/cash': typeof AuthenticatedRedeemCashRoute
   '/school/$schoolId': typeof AuthenticatedSchoolSchoolIdRoute
   '/u/$id': typeof AuthenticatedUIdRoute
 }
@@ -139,8 +164,11 @@ export interface FileRoutesById {
   '/_authenticated/messages': typeof AuthenticatedMessagesRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/community/$id': typeof AuthenticatedCommunityIdRoute
   '/_authenticated/post/$id': typeof AuthenticatedPostIdRoute
+  '/_authenticated/redeem/airtime': typeof AuthenticatedRedeemAirtimeRoute
+  '/_authenticated/redeem/cash': typeof AuthenticatedRedeemCashRoute
   '/_authenticated/school/$schoolId': typeof AuthenticatedSchoolSchoolIdRoute
   '/_authenticated/u/$id': typeof AuthenticatedUIdRoute
 }
@@ -156,8 +184,11 @@ export interface FileRouteTypes {
     | '/messages'
     | '/onboarding'
     | '/settings'
+    | '/wallet'
     | '/community/$id'
     | '/post/$id'
+    | '/redeem/airtime'
+    | '/redeem/cash'
     | '/school/$schoolId'
     | '/u/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -171,8 +202,11 @@ export interface FileRouteTypes {
     | '/messages'
     | '/onboarding'
     | '/settings'
+    | '/wallet'
     | '/community/$id'
     | '/post/$id'
+    | '/redeem/airtime'
+    | '/redeem/cash'
     | '/school/$schoolId'
     | '/u/$id'
   id:
@@ -187,8 +221,11 @@ export interface FileRouteTypes {
     | '/_authenticated/messages'
     | '/_authenticated/onboarding'
     | '/_authenticated/settings'
+    | '/_authenticated/wallet'
     | '/_authenticated/community/$id'
     | '/_authenticated/post/$id'
+    | '/_authenticated/redeem/airtime'
+    | '/_authenticated/redeem/cash'
     | '/_authenticated/school/$schoolId'
     | '/_authenticated/u/$id'
   fileRoutesById: FileRoutesById
@@ -221,6 +258,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/wallet': {
+      id: '/_authenticated/wallet'
+      path: '/wallet'
+      fullPath: '/wallet'
+      preLoaderRoute: typeof AuthenticatedWalletRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
@@ -285,6 +329,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSchoolSchoolIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/redeem/cash': {
+      id: '/_authenticated/redeem/cash'
+      path: '/redeem/cash'
+      fullPath: '/redeem/cash'
+      preLoaderRoute: typeof AuthenticatedRedeemCashRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/redeem/airtime': {
+      id: '/_authenticated/redeem/airtime'
+      path: '/redeem/airtime'
+      fullPath: '/redeem/airtime'
+      preLoaderRoute: typeof AuthenticatedRedeemAirtimeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/post/$id': {
       id: '/_authenticated/post/$id'
       path: '/post/$id'
@@ -310,8 +368,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
   AuthenticatedCommunityIdRoute: typeof AuthenticatedCommunityIdRoute
   AuthenticatedPostIdRoute: typeof AuthenticatedPostIdRoute
+  AuthenticatedRedeemAirtimeRoute: typeof AuthenticatedRedeemAirtimeRoute
+  AuthenticatedRedeemCashRoute: typeof AuthenticatedRedeemCashRoute
   AuthenticatedSchoolSchoolIdRoute: typeof AuthenticatedSchoolSchoolIdRoute
   AuthenticatedUIdRoute: typeof AuthenticatedUIdRoute
 }
@@ -324,8 +385,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedWalletRoute: AuthenticatedWalletRoute,
   AuthenticatedCommunityIdRoute: AuthenticatedCommunityIdRoute,
   AuthenticatedPostIdRoute: AuthenticatedPostIdRoute,
+  AuthenticatedRedeemAirtimeRoute: AuthenticatedRedeemAirtimeRoute,
+  AuthenticatedRedeemCashRoute: AuthenticatedRedeemCashRoute,
   AuthenticatedSchoolSchoolIdRoute: AuthenticatedSchoolSchoolIdRoute,
   AuthenticatedUIdRoute: AuthenticatedUIdRoute,
 }
