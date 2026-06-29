@@ -1,51 +1,51 @@
 ## Goal
-Turn `/discover` from a flat list of school cards into a real **Trending** page that gives users a reason to tap in.
 
-## Changes
+Let any signed-in student create events and marketplace listings instantly (same model as timeline posts), with photo uploads and an admin-side moderation queue to hide bad content.
 
-### 1. Rename the page intent
-- Header changes from "Other campuses" → **"Trending across campuses"** with a secondary line: "What students everywhere are talking about right now."
-- Add a small tab bar at the top: **Trending posts · Campuses · Communities** (default = Trending posts).
+## What I'll build
 
-### 2. Trending posts rail (new — default tab)
-Top of the page, before the campus grid:
-- Pull the top ~10 posts across all schools from the last 7 days, scored by `like_count * 2 + comment_count * 3` (recency-weighted: divide by `hours_since_post + 6`).
-- Render with the existing `PostCard` so likes, share-for-Campoints, and report all keep working.
-- "See more" link scrolls to / loads next page.
+### 1. Image upload infrastructure
+- Create a public storage bucket `campus-media` (5MB limit, image MIME types only).
+- RLS on `storage.objects`: anyone can read; authenticated users can upload/update/delete only their own files (path scoped to `{user_id}/...`).
+- New helper `src/lib/upload.ts` — `uploadImage(file, folder)` returns public URL. Used by event/listing forms and (later) post composer.
+- Lightweight `<ImageUploader />` component with drag/drop + preview, used by both forms.
 
-### 3. School cards — give them a heartbeat
-Each card in the Campuses grid gains:
-- **Cover strip** — keep the gradient as a fallback, but overlay the most-liked recent post's first image (if any) for that school. Falls back to the gradient when the campus has no image post yet.
-- **Live stats row** under the school name: `👥 {member_count} students · 📣 {posts_last_7d} posts this week`.
-- **One trending snippet** — the single top post from that school in the last 7 days, shown as a 2-line teaser with author avatar + name + like count. Tapping it opens the post directly (not the school page).
-- A subtle "Open campus →" affordance at the bottom keeps the existing school-page navigation.
+### 2. Event creation
+- New route `src/routes/_authenticated/events.new.tsx` — form: title, cover image, starts_at (datetime), ends_at (optional), location, description, optional community (filtered to user's school).
+- Sets `host_id = auth.uid()`, `school_id` from user's primary school.
+- Award **+15 Campoints** on event creation (new ledger reason `event_created`, daily cap 2).
+- "Create event" FAB on `/events`.
+- Edit/delete own event from event card menu.
 
-### 4. People to follow strip (engagement booster)
-Below trending posts: a horizontal scroller of 8–12 suggested students you're not yet connected to, weighted toward:
-- Same school (if user has one),
-- Highest follower / connection count,
-- Most active in the last 7 days.
+### 3. Marketplace listing creation
+- New route `src/routes/_authenticated/market.new.tsx` — form: title, photo, price (₦), category, condition, description.
+- Sets `seller_id = auth.uid()`, `school_id` from profile.
+- Award **+10 Campoints** on listing (new ledger reason `listing_created`, daily cap 3).
+- "List an item" FAB on `/market`.
+- "Mark sold" / delete from owner's own listing card.
 
-Each chip: avatar, name, school short_name, "Connect" button (reuses existing connection request mutation).
+### 4. Admin moderation
+Extend `/admin` with two new tabs:
+- **Events** — paginated list of all events, with Hide / Delete actions. Add `status` column (`active` | `hidden`) defaulting to `active`; public read policy filters `status = 'active'`.
+- **Listings** — same pattern for `marketplace_items` (`active` | `hidden` | `sold` — `sold` already exists, just add `hidden`).
+- Reports system extended so users can report events and listings, not just posts.
 
-### 5. Trending communities strip
-A second horizontal scroller: top 8 communities by new posts in the last 7 days, across all schools. Tapping opens `/community/$id`. Helps users discover clubs / SUG / marketplace activity beyond their own school.
-
-### 6. Empty / quiet states
-- If a school has zero posts in the last 7 days → snippet area shows muted "No buzz this week — be the first." instead of being blank.
-- If trending posts overall < 3 (e.g. brand new install) → fall back to "Newest from your network" so the page is never empty.
+### 5. Small polish
+- Tiny "Report" menu item on event cards and marketplace cards (writes to `reports` table with `target_type` of `event` / `listing`).
+- Empty-state CTAs on `/events` and `/market` linking to the new create routes.
 
 ## Technical notes
-- All new data fetched via `useQuery` in the component (browser supabase client; RLS already allows authenticated reads on `posts`, `profiles`, `communities`).
-- New queries:
-  - `trending-posts-global` — single select on `posts` with `profiles!posts_author_id_profiles_fkey`, `schools`, filtered by `created_at > now() - 7d`, sorted in JS by the score above.
-  - `school-trending-snippets` — one query that pulls the latest 50 posts of last 7 days with `school_id`, then reduces in-memory to one top post per school (avoids N+1).
-  - `suggested-people` — `profiles` left-joined against `connections` to exclude existing ones; limit 12.
-  - `trending-communities` — `communities` joined to `posts` count in last 7d.
-- No schema changes, no new server functions, no new tables. Pure frontend on top of what's already there.
-- Files touched: `src/routes/_authenticated/discover.tsx` (rewrite). Possibly extract small `<TrendingPostMini />` and `<SuggestedPersonChip />` components inline in the same file to keep it self-contained.
 
-## Out of scope (will mention as follow-ups, not building now)
-- Replacing the cover image with an AI-picked "image of the week" per campus.
-- A real per-school trending score stored in the DB (cron-refreshed).
-- Notifications when a post from another campus you peeked at blows up.
+- All policy changes use `auth.uid()` directly; no new RPCs needed for the create flows.
+- New `campoint_reason` enum values: `event_created`, `listing_created`. New `award_for_event` / `award_for_listing` triggers mirror the existing post trigger.
+- Add `status text not null default 'active'` to `events`. Add `'hidden'` as valid value to existing marketplace status check.
+- Extend `reports.target_type` to accept `event` and `listing` in addition to `post`.
+- Storage paths: `campus-media/events/{user_id}/{uuid}.jpg`, `campus-media/listings/{user_id}/{uuid}.jpg`.
+- Client-side: zod validation on both forms; max image 5MB; price ≤ ₦10,000,000.
+- No pre-approval, no pending state — matches your "fully open, community moderation" decision from the original product conversation.
+
+## Out of scope (call out)
+
+- Per-image multi-upload galleries on listings (single cover only for v1).
+- Editing photo after creation (delete + recreate for v1).
+- In-app DMs from listings (sellers already discoverable via profile + existing messaging).
