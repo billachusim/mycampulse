@@ -1,15 +1,18 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthUser } from "@/lib/profile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { applyReferralCode } from "@/lib/campoints.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
+  validateSearch: (s: Record<string, unknown>) => ({ ref: typeof s.ref === "string" ? s.ref : undefined }),
   component: Onboarding,
 });
 
@@ -18,12 +21,15 @@ const LEVELS = ["100L", "200L", "300L", "400L", "500L", "600L", "Postgrad", "Alu
 function Onboarding() {
   const { user } = useAuthUser();
   const navigate = useNavigate();
+  const search = Route.useSearch();
+  const applyRef = useServerFn(applyReferralCode);
   const [name, setName] = useState("");
   const [schoolId, setSchoolId] = useState("");
   const [facultyId, setFacultyId] = useState("");
   const [departmentId, setDepartmentId] = useState("");
   const [level, setLevel] = useState("");
   const [hostel, setHostel] = useState("");
+  const [referralCode, setReferralCode] = useState(search.ref ?? "");
   const [saving, setSaving] = useState(false);
 
   // Prefill display name
