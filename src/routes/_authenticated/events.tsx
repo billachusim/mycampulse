@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { useAuthUser } from "@/lib/profile";
-import { CalendarDays, MapPin, Users, Check } from "lucide-react";
+import { CalendarDays, MapPin, Users, Check, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/events")({
@@ -66,12 +66,17 @@ function EventsPage() {
 
   return (
     <AppShell>
-      <div className="mb-5">
-        <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-primary">
-          <CalendarDays className="h-4 w-4" /> Events
+      <div className="mb-5 flex items-end justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-primary">
+            <CalendarDays className="h-4 w-4" /> Events
+          </div>
+          <h1 className="mt-1 font-display text-3xl">This week on campus</h1>
+          <p className="text-sm text-muted-foreground">Tap RSVP to save events and earn Campoints for showing up.</p>
         </div>
-        <h1 className="mt-1 font-display text-3xl">This week on campus</h1>
-        <p className="text-sm text-muted-foreground">Tap RSVP to save events and earn Campoints for showing up.</p>
+        <Button asChild size="sm" className="brand-gradient text-primary-foreground">
+          <Link to="/events/new"><Plus className="mr-1 h-4 w-4" />Host event</Link>
+        </Button>
       </div>
 
       <div className="space-y-3">
@@ -115,9 +120,10 @@ function EventsPage() {
           );
         })}
         {!eventsQ.isLoading && (eventsQ.data?.length ?? 0) === 0 && (
-          <p className="rounded-2xl border border-dashed border-border/60 p-6 text-center text-sm text-muted-foreground">
-            No events yet. Be the first to host one.
-          </p>
+          <div className="rounded-2xl border border-dashed border-border/60 p-8 text-center">
+            <p className="text-sm text-muted-foreground">No events yet — be the first to host one.</p>
+            <Button asChild className="mt-3 brand-gradient text-primary-foreground"><Link to="/events/new">Host an event</Link></Button>
+          </div>
         )}
       </div>
     </AppShell>

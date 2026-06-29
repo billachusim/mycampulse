@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/app-shell";
-import { ShoppingBag, Tag } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Plus, ShoppingBag, Tag } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/market")({
   component: MarketPage,
@@ -17,7 +18,7 @@ function MarketPage() {
       const { data, error } = await supabase
         .from("marketplace_items")
         .select("id, title, description, price_naira, image_url, category, created_at, school:schools(short_name), seller:profiles!marketplace_items_seller_id_fkey(id, display_name, avatar_url)")
-        .eq("status", "available")
+        .eq("status", "active")
         .order("created_at", { ascending: false })
         .limit(60);
       if (error) throw error;
@@ -27,13 +28,19 @@ function MarketPage() {
 
   return (
     <AppShell>
-      <div className="mb-5">
-        <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-primary">
-          <ShoppingBag className="h-4 w-4" /> Marketplace
+      <div className="mb-5 flex items-end justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-primary">
+            <ShoppingBag className="h-4 w-4" /> Marketplace
+          </div>
+          <h1 className="mt-1 font-display text-3xl">Buy & sell on campus</h1>
+          <p className="text-sm text-muted-foreground">Student-to-student deals. Always meet in a safe public spot.</p>
         </div>
-        <h1 className="mt-1 font-display text-3xl">Buy & sell on campus</h1>
-        <p className="text-sm text-muted-foreground">Student-to-student deals. Always meet in a safe public spot.</p>
+        <Button asChild size="sm" className="brand-gradient text-primary-foreground">
+          <Link to="/market/new"><Plus className="mr-1 h-4 w-4" />List item</Link>
+        </Button>
       </div>
+
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {itemsQ.isLoading && Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-56 animate-pulse rounded-2xl bg-card/60" />)}
@@ -61,7 +68,10 @@ function MarketPage() {
         })}
       </div>
       {!itemsQ.isLoading && (itemsQ.data?.length ?? 0) === 0 && (
-        <p className="rounded-2xl border border-dashed border-border/60 p-6 text-center text-sm text-muted-foreground">Nothing listed yet.</p>
+        <div className="rounded-2xl border border-dashed border-border/60 p-8 text-center">
+          <p className="text-sm text-muted-foreground">Nothing listed yet — be the first.</p>
+          <Button asChild className="mt-3 brand-gradient text-primary-foreground"><Link to="/market/new">List something</Link></Button>
+        </div>
       )}
     </AppShell>
   );

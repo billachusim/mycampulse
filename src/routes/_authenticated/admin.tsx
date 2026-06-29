@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-type Tab = "reports" | "redemptions";
+type Tab = "reports" | "redemptions" | "events" | "listings";
 
 function AdminPage() {
   const queryClient = useQueryClient();
@@ -52,6 +52,76 @@ function AdminPage() {
       if (error) throw error;
       return data ?? [];
     },
+  });
+
+  const allEvents = useQuery({
+    queryKey: ["admin-events"],
+    enabled: tab === "events",
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("events")
+        .select("id, title, status, starts_at, location, cover_url, rsvp_count, host:profiles!events_host_id_fkey(id, display_name), school:schools(short_name)")
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const allListings = useQuery({
+    queryKey: ["admin-listings"],
+    enabled: tab === "listings",
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("marketplace_items")
+        .select("id, title, status, price_naira, image_url, category, seller:profiles!marketplace_items_seller_id_fkey(id, display_name), school:schools(short_name)")
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const setEventStatus = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: "active" | "hidden" }) => {
+      const { error } = await supabase.from("events").update({ status }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, vars) => {
+      toast.success(vars.status === "hidden" ? "Event hidden" : "Event restored");
+      queryClient.invalidateQueries({ queryKey: ["admin-events"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deleteEvent = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("events").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Event deleted"); queryClient.invalidateQueries({ queryKey: ["admin-events"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const setListingStatus = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: "active" | "hidden" | "sold" }) => {
+      const { error } = await supabase.from("marketplace_items").update({ status }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, vars) => {
+      toast.success(vars.status === "hidden" ? "Listing hidden" : vars.status === "sold" ? "Marked sold" : "Listing restored");
+      queryClient.invalidateQueries({ queryKey: ["admin-listings"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deleteListing = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("marketplace_items").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Listing deleted"); queryClient.invalidateQueries({ queryKey: ["admin-listings"] }); },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const hide = useMutation({
@@ -96,9 +166,11 @@ function AdminPage() {
   return (
     <AppShell>
       <h1 className="mb-2 font-display text-3xl">Admin</h1>
-      <div className="mb-6 flex gap-2 border-b border-border/60">
+      <div className="mb-6 flex flex-wrap gap-2 border-b border-border/60">
         {([
           ["reports", `Moderation${reports.data ? ` · ${reports.data.length}` : ""}`],
+          ["events", `Events${allEvents.data ? ` · ${allEvents.data.length}` : ""}`],
+          ["listings", `Listings${allListings.data ? ` · ${allListings.data.length}` : ""}`],
           ["redemptions", `Cash-outs${redemptions.data ? ` · ${redemptions.data.length}` : ""}`],
         ] as [Tab, string][]).map(([key, label]) => (
           <button
@@ -176,6 +248,74 @@ function AdminPage() {
           })}
           {redemptions.data && redemptions.data.length === 0 && (
             <div className="rounded-2xl border border-dashed border-border/60 p-6 text-sm text-muted-foreground">No pending cash-outs. 🎉</div>
+          )}
+        </div>
+      )}
+
+      {tab === "events" && (
+        <div className="space-y-3">
+          {allEvents.data?.map((e) => {
+            const host = Array.isArray(e.host) ? e.host[0] : e.host;
+            const school = Array.isArray(e.school) ? e.school[0] : e.school;
+            return (
+              <div key={e.id} className="flex items-start gap-3 rounded-2xl border border-border/60 bg-card p-3">
+                {e.cover_url && <img src={e.cover_url} alt="" className="h-16 w-24 flex-shrink-0 rounded-lg object-cover" />}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="truncate font-medium">{e.title}</p>
+                    {e.status === "hidden" && <span className="rounded-full bg-destructive/20 px-2 py-0.5 text-[10px] uppercase text-destructive">Hidden</span>}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(e.starts_at).toLocaleString()} · {school?.short_name ?? "—"} · {host?.display_name ?? "?"} · {e.rsvp_count} RSVPs
+                  </p>
+                </div>
+                <div className="flex flex-shrink-0 flex-col gap-1">
+                  {e.status === "hidden" ? (
+                    <Button size="sm" variant="secondary" onClick={() => setEventStatus.mutate({ id: e.id, status: "active" })}>Restore</Button>
+                  ) : (
+                    <Button size="sm" variant="outline" onClick={() => setEventStatus.mutate({ id: e.id, status: "hidden" })}>Hide</Button>
+                  )}
+                  <Button size="sm" variant="destructive" onClick={() => { if (confirm("Delete this event permanently?")) deleteEvent.mutate(e.id); }}>Delete</Button>
+                </div>
+              </div>
+            );
+          })}
+          {allEvents.data && allEvents.data.length === 0 && (
+            <div className="rounded-2xl border border-dashed border-border/60 p-6 text-sm text-muted-foreground">No events yet.</div>
+          )}
+        </div>
+      )}
+
+      {tab === "listings" && (
+        <div className="space-y-3">
+          {allListings.data?.map((it) => {
+            const seller = Array.isArray(it.seller) ? it.seller[0] : it.seller;
+            const school = Array.isArray(it.school) ? it.school[0] : it.school;
+            return (
+              <div key={it.id} className="flex items-start gap-3 rounded-2xl border border-border/60 bg-card p-3">
+                {it.image_url && <img src={it.image_url} alt="" className="h-16 w-16 flex-shrink-0 rounded-lg object-cover" />}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="truncate font-medium">{it.title}</p>
+                    {it.status !== "active" && <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] uppercase">{it.status}</span>}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    ₦{it.price_naira.toLocaleString()} · {it.category} · {school?.short_name ?? "—"} · {seller?.display_name ?? "?"}
+                  </p>
+                </div>
+                <div className="flex flex-shrink-0 flex-col gap-1">
+                  {it.status === "hidden" ? (
+                    <Button size="sm" variant="secondary" onClick={() => setListingStatus.mutate({ id: it.id, status: "active" })}>Restore</Button>
+                  ) : (
+                    <Button size="sm" variant="outline" onClick={() => setListingStatus.mutate({ id: it.id, status: "hidden" })}>Hide</Button>
+                  )}
+                  <Button size="sm" variant="destructive" onClick={() => { if (confirm("Delete this listing permanently?")) deleteListing.mutate(it.id); }}>Delete</Button>
+                </div>
+              </div>
+            );
+          })}
+          {allListings.data && allListings.data.length === 0 && (
+            <div className="rounded-2xl border border-dashed border-border/60 p-6 text-sm text-muted-foreground">No listings yet.</div>
           )}
         </div>
       )}
