@@ -21,9 +21,9 @@ export function AppShell({ children }: { children: ReactNode }) {
     router.navigate({ to: "/auth", replace: true });
   }
 
-  type NavItem = { to: "/" | "/discover" | "/connections" | "/messages"; label: string; icon: typeof Home; exact?: boolean };
+  type NavItem = { to: "/home" | "/discover" | "/connections" | "/messages"; label: string; icon: typeof Home; exact?: boolean };
   const nav: NavItem[] = [
-    { to: "/", label: "Home", icon: Home, exact: true },
+    { to: "/home", label: "Home", icon: Home, exact: true },
     { to: "/discover", label: "Discover", icon: Compass },
     { to: "/connections", label: "People", icon: Users },
     { to: "/messages", label: "Messages", icon: MessageSquare },
