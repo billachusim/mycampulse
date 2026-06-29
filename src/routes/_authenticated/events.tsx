@@ -66,12 +66,17 @@ function EventsPage() {
 
   return (
     <AppShell>
-      <div className="mb-5">
-        <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-primary">
-          <CalendarDays className="h-4 w-4" /> Events
+      <div className="mb-5 flex items-end justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-primary">
+            <CalendarDays className="h-4 w-4" /> Events
+          </div>
+          <h1 className="mt-1 font-display text-3xl">This week on campus</h1>
+          <p className="text-sm text-muted-foreground">Tap RSVP to save events and earn Campoints for showing up.</p>
         </div>
-        <h1 className="mt-1 font-display text-3xl">This week on campus</h1>
-        <p className="text-sm text-muted-foreground">Tap RSVP to save events and earn Campoints for showing up.</p>
+        <Button asChild size="sm" className="brand-gradient text-primary-foreground">
+          <Link to="/events/new"><Plus className="mr-1 h-4 w-4" />Host event</Link>
+        </Button>
       </div>
 
       <div className="space-y-3">
