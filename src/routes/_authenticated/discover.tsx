@@ -222,14 +222,12 @@ function Discover() {
 
   // ---- My faculty rail
   const myFacultyQ = useQuery({
-    queryKey: ["discover-faculty-posts", me?.faculty_id, me?.primary_school_id],
+    queryKey: ["discover-school-rail", me?.primary_school_id],
     enabled: !!me?.primary_school_id,
     queryFn: async () => {
-      let q = supabase.from("posts").select(POST_SELECT)
+      const { data, error } = await supabase.from("posts").select(POST_SELECT)
         .eq("hidden", false).eq("school_id", me!.primary_school_id!)
         .order("created_at", { ascending: false }).limit(6);
-      if (me?.faculty_id) q = q.eq("faculty_id", me.faculty_id);
-      const { data, error } = await q;
       if (error) throw error;
       return (data ?? []) as unknown as FeedPost[];
     },
