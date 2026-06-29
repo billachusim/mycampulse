@@ -18,7 +18,7 @@ function MarketPage() {
       const { data, error } = await supabase
         .from("marketplace_items")
         .select("id, title, description, price_naira, image_url, category, created_at, school:schools(short_name), seller:profiles!marketplace_items_seller_id_fkey(id, display_name, avatar_url)")
-        .eq("status", "available")
+        .eq("status", "active")
         .order("created_at", { ascending: false })
         .limit(60);
       if (error) throw error;
