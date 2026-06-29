@@ -6,7 +6,7 @@ import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { timeAgo } from "@/lib/profile";
-import { formatPoints, nairaFromPoints } from "@/lib/campoints";
+import { formatPoints } from "@/lib/campoints";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   beforeLoad: async () => {
