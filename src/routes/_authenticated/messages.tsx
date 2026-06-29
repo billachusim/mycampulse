@@ -26,7 +26,7 @@ function Messages() {
     enabled: !!user,
     queryFn: async () => {
       const { data, error } = await supabase.from("conversations")
-        .select("id, user_a, user_b, last_message_at, pa:profiles!conversations_user_a_fkey(id, display_name, avatar_url), pb:profiles!conversations_user_b_fkey(id, display_name, avatar_url)")
+        .select("id, user_a, user_b, last_message_at, pa:profiles!conversations_user_a_profiles_fkey(id, display_name, avatar_url), pb:profiles!conversations_user_b_profiles_fkey(id, display_name, avatar_url)")
         .or(`user_a.eq.${user!.id},user_b.eq.${user!.id}`)
         .order("last_message_at", { ascending: false });
       if (error) throw error;

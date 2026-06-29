@@ -20,7 +20,7 @@ function ConnectionsPage() {
     enabled: !!user,
     queryFn: async () => {
       const { data, error } = await supabase.from("connections")
-        .select("id, status, requester_id, addressee_id, requester:profiles!connections_requester_id_fkey(id, display_name, avatar_url), addressee:profiles!connections_addressee_id_fkey(id, display_name, avatar_url)")
+        .select("id, status, requester_id, addressee_id, requester:profiles!connections_requester_id_profiles_fkey(id, display_name, avatar_url), addressee:profiles!connections_addressee_id_profiles_fkey(id, display_name, avatar_url)")
         .or(`requester_id.eq.${user!.id},addressee_id.eq.${user!.id}`)
         .order("created_at", { ascending: false });
       if (error) throw error;
