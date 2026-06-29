@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-type Tab = "reports" | "redemptions";
+type Tab = "reports" | "redemptions" | "events" | "listings";
 
 function AdminPage() {
   const queryClient = useQueryClient();
