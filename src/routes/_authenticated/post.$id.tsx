@@ -33,7 +33,7 @@ function PostDetail() {
     queryKey: ["comments", id],
     queryFn: async () => {
       const { data, error } = await supabase.from("comments")
-        .select("id, body, created_at, parent_id, author:profiles!comments_author_id_fkey(id, display_name, avatar_url)")
+        .select("id, body, created_at, parent_id, author:profiles!comments_author_id_profiles_fkey(id, display_name, avatar_url)")
         .eq("post_id", id).order("created_at");
       if (error) throw error;
       return data ?? [];

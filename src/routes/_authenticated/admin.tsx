@@ -24,7 +24,7 @@ function AdminPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("reports")
-        .select("id, target_kind, target_id, reason, status, created_at, reporter:profiles!reports_reporter_id_fkey(display_name)")
+        .select("id, target_kind, target_id, reason, status, created_at, reporter:profiles!reports_reporter_id_profiles_fkey(display_name)")
         .eq("status", "open")
         .order("created_at", { ascending: false })
         .limit(50);
