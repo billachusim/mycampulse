@@ -6,7 +6,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ImageUploader } from "@/components/image-uploader";
+import { MediaUploader } from "@/components/media-uploader";
+import type { UploadedMedia } from "@/lib/upload";
 import { toast } from "sonner";
 
 export function Composer({ open, onOpenChange, defaultCommunityId }: {
