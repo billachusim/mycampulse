@@ -81,9 +81,8 @@ function AdminPage() {
 
   const setRedemption = useMutation({
     mutationFn: async ({ id, status, note }: { id: string; status: "paid" | "rejected" | "approved"; note?: string }) => {
-      const patch: { status: typeof status; admin_notes?: string; paid_at?: string } = { status };
+      const patch: { status: typeof status; admin_notes?: string } = { status };
       if (note) patch.admin_notes = note;
-      if (status === "paid") patch.paid_at = new Date().toISOString();
       const { error } = await supabase.from("redemptions").update(patch).eq("id", id);
       if (error) throw error;
     },
