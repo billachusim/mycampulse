@@ -25,7 +25,7 @@ export type FeedPost = {
 export const POST_SELECT =
   "id, body, created_at, like_count, comment_count, hidden, media, author:profiles!posts_author_id_profiles_fkey(id, display_name, avatar_url, verified), school:schools(id, short_name), community:communities(id, name, kind)";
 
-export function PostCard({ post }: { post: FeedPost }) {
+export function PostCard({ post, readOnly = false }: { post: FeedPost; readOnly?: boolean }) {
   const { user } = useAuthUser();
   const queryClient = useQueryClient();
   const claimShareFn = useServerFn(claimShare);
