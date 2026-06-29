@@ -23,6 +23,8 @@ import { Route as AuthenticatedEventsRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedDiscoverRouteImport } from './routes/_authenticated/discover'
 import { Route as AuthenticatedConnectionsRouteImport } from './routes/_authenticated/connections'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedMarketIndexRouteImport } from './routes/_authenticated/market.index'
+import { Route as AuthenticatedEventsIndexRouteImport } from './routes/_authenticated/events.index'
 import { Route as AuthenticatedUIdRouteImport } from './routes/_authenticated/u.$id'
 import { Route as AuthenticatedTagTagRouteImport } from './routes/_authenticated/tag.$tag'
 import { Route as AuthenticatedSchoolSchoolIdRouteImport } from './routes/_authenticated/school.$schoolId'
@@ -104,6 +106,18 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMarketIndexRoute =
+  AuthenticatedMarketIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedMarketRoute,
+  } as any)
+const AuthenticatedEventsIndexRoute =
+  AuthenticatedEventsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedEventsRoute,
+  } as any)
 const AuthenticatedUIdRoute = AuthenticatedUIdRouteImport.update({
   id: '/u/$id',
   path: '/u/$id',
@@ -176,6 +190,8 @@ export interface FileRoutesByFullPath {
   '/school/$schoolId': typeof AuthenticatedSchoolSchoolIdRoute
   '/tag/$tag': typeof AuthenticatedTagTagRoute
   '/u/$id': typeof AuthenticatedUIdRoute
+  '/events/': typeof AuthenticatedEventsIndexRoute
+  '/market/': typeof AuthenticatedMarketIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -183,10 +199,8 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/connections': typeof AuthenticatedConnectionsRoute
   '/discover': typeof AuthenticatedDiscoverRoute
-  '/events': typeof AuthenticatedEventsRouteWithChildren
   '/home': typeof AuthenticatedHomeRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
-  '/market': typeof AuthenticatedMarketRouteWithChildren
   '/messages': typeof AuthenticatedMessagesRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -200,6 +214,8 @@ export interface FileRoutesByTo {
   '/school/$schoolId': typeof AuthenticatedSchoolSchoolIdRoute
   '/tag/$tag': typeof AuthenticatedTagTagRoute
   '/u/$id': typeof AuthenticatedUIdRoute
+  '/events': typeof AuthenticatedEventsIndexRoute
+  '/market': typeof AuthenticatedMarketIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -226,6 +242,8 @@ export interface FileRoutesById {
   '/_authenticated/school/$schoolId': typeof AuthenticatedSchoolSchoolIdRoute
   '/_authenticated/tag/$tag': typeof AuthenticatedTagTagRoute
   '/_authenticated/u/$id': typeof AuthenticatedUIdRoute
+  '/_authenticated/events/': typeof AuthenticatedEventsIndexRoute
+  '/_authenticated/market/': typeof AuthenticatedMarketIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -252,6 +270,8 @@ export interface FileRouteTypes {
     | '/school/$schoolId'
     | '/tag/$tag'
     | '/u/$id'
+    | '/events/'
+    | '/market/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -259,10 +279,8 @@ export interface FileRouteTypes {
     | '/admin'
     | '/connections'
     | '/discover'
-    | '/events'
     | '/home'
     | '/leaderboard'
-    | '/market'
     | '/messages'
     | '/onboarding'
     | '/settings'
@@ -276,6 +294,8 @@ export interface FileRouteTypes {
     | '/school/$schoolId'
     | '/tag/$tag'
     | '/u/$id'
+    | '/events'
+    | '/market'
   id:
     | '__root__'
     | '/'
@@ -301,6 +321,8 @@ export interface FileRouteTypes {
     | '/_authenticated/school/$schoolId'
     | '/_authenticated/tag/$tag'
     | '/_authenticated/u/$id'
+    | '/_authenticated/events/'
+    | '/_authenticated/market/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -409,6 +431,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/market/': {
+      id: '/_authenticated/market/'
+      path: '/'
+      fullPath: '/market/'
+      preLoaderRoute: typeof AuthenticatedMarketIndexRouteImport
+      parentRoute: typeof AuthenticatedMarketRoute
+    }
+    '/_authenticated/events/': {
+      id: '/_authenticated/events/'
+      path: '/'
+      fullPath: '/events/'
+      preLoaderRoute: typeof AuthenticatedEventsIndexRouteImport
+      parentRoute: typeof AuthenticatedEventsRoute
+    }
     '/_authenticated/u/$id': {
       id: '/_authenticated/u/$id'
       path: '/u/$id'
@@ -477,10 +513,12 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedEventsRouteChildren {
   AuthenticatedEventsNewRoute: typeof AuthenticatedEventsNewRoute
+  AuthenticatedEventsIndexRoute: typeof AuthenticatedEventsIndexRoute
 }
 
 const AuthenticatedEventsRouteChildren: AuthenticatedEventsRouteChildren = {
   AuthenticatedEventsNewRoute: AuthenticatedEventsNewRoute,
+  AuthenticatedEventsIndexRoute: AuthenticatedEventsIndexRoute,
 }
 
 const AuthenticatedEventsRouteWithChildren =
@@ -488,10 +526,12 @@ const AuthenticatedEventsRouteWithChildren =
 
 interface AuthenticatedMarketRouteChildren {
   AuthenticatedMarketNewRoute: typeof AuthenticatedMarketNewRoute
+  AuthenticatedMarketIndexRoute: typeof AuthenticatedMarketIndexRoute
 }
 
 const AuthenticatedMarketRouteChildren: AuthenticatedMarketRouteChildren = {
   AuthenticatedMarketNewRoute: AuthenticatedMarketNewRoute,
+  AuthenticatedMarketIndexRoute: AuthenticatedMarketIndexRoute,
 }
 
 const AuthenticatedMarketRouteWithChildren =
