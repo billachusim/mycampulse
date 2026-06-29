@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { useAuthUser } from "@/lib/profile";
-import { CalendarDays, MapPin, Users, Check } from "lucide-react";
+import { CalendarDays, MapPin, Users, Check, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/events")({
