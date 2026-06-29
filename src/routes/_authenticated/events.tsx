@@ -120,9 +120,10 @@ function EventsPage() {
           );
         })}
         {!eventsQ.isLoading && (eventsQ.data?.length ?? 0) === 0 && (
-          <p className="rounded-2xl border border-dashed border-border/60 p-6 text-center text-sm text-muted-foreground">
-            No events yet. Be the first to host one.
-          </p>
+          <div className="rounded-2xl border border-dashed border-border/60 p-8 text-center">
+            <p className="text-sm text-muted-foreground">No events yet — be the first to host one.</p>
+            <Button asChild className="mt-3 brand-gradient text-primary-foreground"><Link to="/events/new">Host an event</Link></Button>
+          </div>
         )}
       </div>
     </AppShell>
