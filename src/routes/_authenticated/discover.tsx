@@ -115,7 +115,7 @@ function Discover() {
       const { data, error } = await supabase
         .from("marketplace_items")
         .select("id, title, price_naira, image_url, school:schools(short_name)")
-        .eq("status", "available").order("created_at", { ascending: false }).limit(8);
+        .eq("status", "active").order("created_at", { ascending: false }).limit(8);
       if (error) throw error;
       return data ?? [];
     },
