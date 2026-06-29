@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/app-shell";
-import { ShoppingBag, Tag } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Plus, ShoppingBag, Tag } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/market")({
   component: MarketPage,
