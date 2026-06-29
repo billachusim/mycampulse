@@ -6,7 +6,7 @@ import { AppShell } from "@/components/app-shell";
 import { PostCard, POST_SELECT, type FeedPost } from "@/components/post-card";
 import { Flame, Building2, Layers, Sparkles } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/")({
+export const Route = createFileRoute("/_authenticated/home")({
   component: HomeFeed,
 });
 
