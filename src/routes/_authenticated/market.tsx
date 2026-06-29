@@ -28,13 +28,19 @@ function MarketPage() {
 
   return (
     <AppShell>
-      <div className="mb-5">
-        <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-primary">
-          <ShoppingBag className="h-4 w-4" /> Marketplace
+      <div className="mb-5 flex items-end justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-primary">
+            <ShoppingBag className="h-4 w-4" /> Marketplace
+          </div>
+          <h1 className="mt-1 font-display text-3xl">Buy & sell on campus</h1>
+          <p className="text-sm text-muted-foreground">Student-to-student deals. Always meet in a safe public spot.</p>
         </div>
-        <h1 className="mt-1 font-display text-3xl">Buy & sell on campus</h1>
-        <p className="text-sm text-muted-foreground">Student-to-student deals. Always meet in a safe public spot.</p>
+        <Button asChild size="sm" className="brand-gradient text-primary-foreground">
+          <Link to="/market/new"><Plus className="mr-1 h-4 w-4" />List item</Link>
+        </Button>
       </div>
+
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {itemsQ.isLoading && Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-56 animate-pulse rounded-2xl bg-card/60" />)}
