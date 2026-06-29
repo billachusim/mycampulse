@@ -142,9 +142,15 @@ export function PostCard({ post, readOnly = false }: { post: FeedPost; readOnly?
             <Heart className={`h-4 w-4 ${liked ? "fill-current" : ""}`} /> {post.like_count}
           </button>
         )}
-        <Link to={readOnly ? "/auth" : "/post/$id"} params={readOnly ? undefined : { id: post.id }} className="flex items-center gap-1.5 rounded-md px-2 py-1 hover:bg-secondary">
-          <MessageCircle className="h-4 w-4" /> {post.comment_count}
-        </Link>
+        {readOnly ? (
+          <Link to="/auth" className="flex items-center gap-1.5 rounded-md px-2 py-1 hover:bg-secondary">
+            <MessageCircle className="h-4 w-4" /> {post.comment_count}
+          </Link>
+        ) : (
+          <Link to="/post/$id" params={{ id: post.id }} className="flex items-center gap-1.5 rounded-md px-2 py-1 hover:bg-secondary">
+            <MessageCircle className="h-4 w-4" /> {post.comment_count}
+          </Link>
+        )}
         <button onClick={share} className="flex items-center gap-1.5 rounded-md px-2 py-1 hover:bg-secondary">
           <Share2 className="h-4 w-4" />
         </button>
