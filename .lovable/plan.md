@@ -1,46 +1,48 @@
-# Unblock sign-up + give you admin access
+## Goal
+Populate the app with realistic-but-clearly-dummy data so you can actually feel Campulse working: a fleshed-out profile for you, a roster of fake students, a busy feed across schools, your connections, pending requests, and active message threads.
 
-Three things going on. Here's what I'll do for each, and why.
+## What gets created
 
-## 1. "Email not confirmed" → turn off the confirmation step
+### 1. Your profile (admin account)
+- Set `display_name`: "Sim Nachu", `handle`: `sim`, `bio`: "Building Campulse · Founder · hops between every campus 👀"
+- Avatar: a DiceBear seeded portrait URL
+- `primary_school_id` → **UNILAG** (so the "Your School" rail isn't empty for you), `verified = true`, `onboarded = true`
+- Join you into UNILAG · Faculty of Engineering, Computer Engineering dept, 400L, and the SUG + Marketplace + Events communities
 
-Right now Lovable Cloud requires every new account to click a verification link before sign-in works. That's why your sign-in keeps bouncing.
+### 2. Sixteen dummy students across all 8 schools
+Spread 2 per school, each with:
+- Auth user (placeholder `@campulse.test` email, random password — they will never log in)
+- Profile with display name, handle, bio, DiceBear avatar, faculty/dept/level/hostel, verified flag
+- Memberships in their school + a couple of communities
 
-For an early-stage app where you're the one testing, the right move is to **turn off email confirmation** so accounts work the moment they sign up. Standard for MVPs; we can flip it back on later when you're closer to public launch.
+Sample personalities so the feed reads naturally:
+- Ada (UNILAG, 300L CS), Tunde (UNILAG, 200L Mech Eng), Zainab (ABU, 400L Law), Chuka (UNN, 100L Medicine), Bisi (OAU, SUG VP), Kemi (UI, Theatre Arts), Ifeoma (UNIBEN, Pharmacy), Femi (FUTA, Architecture), David (CU, ICT), plus 7 more.
 
-- Set Lovable Cloud auth to auto-confirm new sign-ups.
-- No code change needed; you'll sign in straight after the next account you create.
+### 3. ~40 realistic dummy posts
+Mixed across schools, communities, and post types — campus gist, lecture rant, hostel chaos, marketplace listing, event flier, lost-and-found, club recruitment, sports banter, exam-week confession, etc. Marked clearly as dummy in body where natural (e.g. ends with "(dummy seed)"). Sprinkle `like_count` and `comment_count` 0–180 so the **Trending** rail has obvious winners. Posts dated across the last 24 hours so they show up in trending.
 
-## 2. Give you admin access without forcing a school
+### 4. Connections
+- 6 dummy users are **accepted** connections of yours (so Connections tab shows people)
+- 3 dummy users have **pending** requests TO you (so you can accept)
+- 2 dummy users you've sent a request to (still pending)
+- Plus ~10 connections between the dummies themselves
 
-Today onboarding forces every user to pick a school. You're the founder, not a student — that gate shouldn't apply to you. Plan:
+### 5. Conversations & messages
+- 4 active 1:1 conversations between you and your top connections
+- Each with 4–7 realistic messages, last_message_at staggered across last 2 days so the inbox has unread-ish ordering
+- Sample tone: "yo, are you coming for the SUG debate tonight?", "I dropped the past questions in the group", etc.
 
-- Insert an `admin` row into `user_roles` for your account (`nachusim@gmail.com`, id `69fa0e3c-4826-466c-9e0a-996097ec9fda`).
-- Update the `_authenticated` route gate so that **admins skip the onboarding redirect**. You'll land straight on `/home` after signing in.
-- The home feed already falls back gracefully when there's no primary school — I'll tweak it so for an admin without a school it shows **Campus Trending across all schools** instead of an empty "Your School" rail.
-- Add a small **Admin** entry in Settings (visible only to admins) that links to a basic moderation view: open reports + hide/unhide post buttons. (Was already in scope; this turn just wires it to the new admin gate.)
+### 6. One open report
+- A dummy user reports a dummy post for "Spam" — so your `/admin` moderation queue shows a real card to act on.
 
-You'll then be able to browse every school, every community, every post — without belonging to any single campus.
+## How it's delivered
+A single seed migration (idempotent-ish, guarded by `ON CONFLICT DO NOTHING` and stable UUIDs) that:
+1. Inserts 16 rows into `auth.users` with fixed UUIDs and minimal fields (email, encrypted_password placeholder, confirmed_at, raw_user_meta_data).
+2. Inserts matching `profiles` rows.
+3. Inserts memberships, posts, likes-bumped counts, connections, conversations, messages, and the one report.
+4. Updates your existing profile to the rich version described above.
 
-## 3. Will publishing to a custom domain fix the spam problem?
-
-**Partly, but not on its own.** Three things drive whether auth emails land in inbox:
-
-1. **Who the email comes from** — right now it's a generic Lovable shared sender, which spam filters distrust.
-2. **DNS auth records** (SPF / DKIM / DMARC) on the sending domain.
-3. **Domain reputation** — a brand-new domain with no history still gets filtered for a while.
-
-Just connecting `campulse.com` (or whatever) to the *site* doesn't fix email. What fixes it is also setting up **Lovable Emails on a sub-domain you own** (e.g. `notify.campulse.com`). Then emails come from `welcome@notify.campulse.com`, signed by your domain, and inbox placement improves a lot.
-
-So my recommendation:
-
-- **Today:** turn off email confirmation (above). You stop fighting spam to test.
-- **When you're closer to launch:** connect a custom domain to the site **and** set up Lovable Emails on a subdomain in the same step. Then I'll re-enable email confirmation. I won't do this now because you don't have a domain configured yet — and DNS work that early just slows you down.
-
-## Out of scope for this turn
-
-- No custom-domain DNS work yet (you haven't connected one — let's not block on this).
-- No Lovable Emails setup yet (same reason).
-- No password reset flow (deferred until we re-enable email confirmation).
-
-Closing message will spell out: you can now sign in immediately after sign-up, you have admin access, and the admin-flagged path through the app.
+## Notes
+- All dummy emails use `@campulse.test` and a non-functional password hash — they can't actually sign in, they only exist to satisfy FK constraints and look real in the UI.
+- Easy to wipe later: a single `DELETE FROM auth.users WHERE email LIKE '%@campulse.test'` cascades through everything.
+- Nothing in the app code changes — pure data seed.
