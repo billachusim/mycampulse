@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { z } from "zod";
+import { BrandLogo } from "@/components/brand-logo";
 
 const searchSchema = z.object({ redirect: z.string().optional() });
 
