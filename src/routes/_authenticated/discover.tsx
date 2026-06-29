@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,7 +50,7 @@ function naira(n: number) { return "₦" + n.toLocaleString(); }
 function Discover() {
   const { user } = useAuthUser();
   const { data: me } = useProfile();
-  const navigate = useNavigate();
+  
   const [tab, setTab] = useState<Tab>("for-you");
   const [win, setWin] = useState<Window>("7d");
   const [query, setQuery] = useState("");
@@ -466,7 +466,7 @@ function Discover() {
               )}
 
               {(myFacultyQ.data?.length ?? 0) > 0 && (
-                <RailHeader icon={Sparkles} title={me?.faculty_id ? "From your faculty" : "From your school"}>
+                <RailHeader icon={Sparkles} title="From your school">
                   <div className="-mx-1 flex gap-2 overflow-x-auto pb-2">
                     {myFacultyQ.data!.map((p) => (
                       <Link key={p.id} to="/post/$id" params={{ id: p.id }}
@@ -626,8 +626,6 @@ function Discover() {
             <QuickLink to="/market" icon={ShoppingBag} label="Marketplace" />
             <QuickLink to="/leaderboard" icon={Trophy} label="Leaderboard" />
           </div>
-          {/* hidden navigate to keep hook referenced */}
-          <span className="hidden" aria-hidden onClick={() => navigate({ to: "/home" })} />
         </>
       )}
     </AppShell>
