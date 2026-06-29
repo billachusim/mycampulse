@@ -46,7 +46,7 @@ function AuthPage() {
         if (error) throw error;
       }
       await router.invalidate();
-      navigate({ to: search.redirect ?? "/", replace: true });
+      window.location.replace(search.redirect ?? "/home");
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
