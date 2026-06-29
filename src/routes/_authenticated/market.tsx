@@ -68,7 +68,10 @@ function MarketPage() {
         })}
       </div>
       {!itemsQ.isLoading && (itemsQ.data?.length ?? 0) === 0 && (
-        <p className="rounded-2xl border border-dashed border-border/60 p-6 text-center text-sm text-muted-foreground">Nothing listed yet.</p>
+        <div className="rounded-2xl border border-dashed border-border/60 p-8 text-center">
+          <p className="text-sm text-muted-foreground">Nothing listed yet — be the first.</p>
+          <Button asChild className="mt-3 brand-gradient text-primary-foreground"><Link to="/market/new">List something</Link></Button>
+        </div>
       )}
     </AppShell>
   );
