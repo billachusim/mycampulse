@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { z } from "zod";
+import { BrandLogo } from "@/components/brand-logo";
 
 const searchSchema = z.object({ redirect: z.string().optional() });
 
@@ -57,9 +58,8 @@ function AuthPage() {
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
       <div className="relative hidden bg-card p-12 lg:flex lg:flex-col lg:justify-between">
-        <Link to="/" className="flex items-center gap-2">
-          <span className="grid h-9 w-9 place-items-center rounded-lg brand-gradient text-primary-foreground font-display text-lg">c</span>
-          <span className="font-display text-2xl">campulse</span>
+        <Link to="/" className="flex items-center">
+          <BrandLogo size={44} withWordmark wordmarkClassName="text-2xl" />
         </Link>
         <div>
           <h1 className="font-display text-5xl leading-tight">Your Campus Online.</h1>

@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { BrandLogo } from "@/components/brand-logo";
 
 export const Route = createFileRoute("/")({
   ssr: false,
@@ -29,10 +30,7 @@ function Landing() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
-        <div className="flex items-center gap-2">
-          <span className="grid h-9 w-9 place-items-center rounded-lg brand-gradient text-primary-foreground font-display text-lg">c</span>
-          <span className="font-display text-2xl">campulse</span>
-        </div>
+        <BrandLogo size={40} withWordmark wordmarkClassName="text-2xl" />
         <Link to="/auth" className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">Sign in</Link>
       </header>
 
