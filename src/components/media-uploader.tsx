@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
-import { ImagePlus, Loader2, X, Film, ImageIcon } from "lucide-react";
-import { uploadMedia, type UploadedMedia } from "@/lib/upload";
+import { ImagePlus, Loader2, X, Film, ImageIcon, RotateCw } from "lucide-react";
+import { uploadMedia, UploadCancelledError, type UploadedMedia } from "@/lib/upload";
 import { toast } from "sonner";
 
 export function MediaUploader({
@@ -15,37 +15,59 @@ export function MediaUploader({
   label?: string;
 }) {
   const ref = useRef<HTMLInputElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
   const [kind, setKind] = useState<"image" | "video" | null>(null);
+  const [failed, setFailed] = useState<{ file: File; message: string } | null>(null);
 
   async function handle(file: File) {
+    setFailed(null);
     setBusy(true);
     setProgress(0);
-    setKind(file.type.startsWith("video/") ? "video" : "image");
-    const loadingId = toast.loading(
-      file.type.startsWith("video/") ? "Uploading video…" : "Uploading photo…",
-      { description: "0%" }
-    );
+    const isVideo = file.type.startsWith("video/");
+    setKind(isVideo ? "video" : "image");
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const loadingId = toast.loading(isVideo ? "Uploading video…" : "Uploading photo…", {
+      description: "0%",
+    });
     try {
-      const media = await uploadMedia(file, folder, (pct) => {
-        setProgress(pct);
-        toast.loading(file.type.startsWith("video/") ? "Uploading video…" : "Uploading photo…", {
-          id: loadingId,
-          description: `${pct}%`,
-        });
+      const media = await uploadMedia(file, folder, {
+        signal: controller.signal,
+        onProgress: (pct) => {
+          setProgress(pct);
+          toast.loading(isVideo ? "Uploading video…" : "Uploading photo…", {
+            id: loadingId,
+            description: `${pct}%`,
+          });
+        },
       });
       onChange(media);
       toast.success(media.type === "video" ? "Video ready to post" : "Photo ready to post", {
         id: loadingId,
       });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Upload failed", { id: loadingId });
+      if (e instanceof UploadCancelledError) {
+        toast.message("Upload cancelled", { id: loadingId });
+      } else {
+        const message = e instanceof Error ? e.message : "Upload failed";
+        setFailed({ file, message });
+        toast.error(message, {
+          id: loadingId,
+          description: "Tap Retry to try again.",
+        });
+      }
     } finally {
+      abortRef.current = null;
       setBusy(false);
       setProgress(0);
       setKind(null);
     }
+  }
+
+  function cancel() {
+    abortRef.current?.abort();
   }
 
   if (value) {
@@ -83,6 +105,65 @@ export function MediaUploader({
             style={{ width: `${progress}%` }}
           />
         </div>
+        <button
+          type="button"
+          onClick={cancel}
+          className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background px-3 py-1 text-xs font-medium text-foreground hover:bg-secondary"
+        >
+          <X className="h-3.5 w-3.5" />
+          Cancel upload
+        </button>
+      </div>
+    );
+  }
+
+  if (failed) {
+    const Icon = failed.file.type.startsWith("video/") ? Film : ImageIcon;
+    return (
+      <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-destructive/50 bg-destructive/5 p-4 text-center text-sm">
+        <div className="flex items-center gap-2 text-foreground">
+          <Icon className="h-5 w-5" />
+          <span className="font-medium">Upload failed</span>
+        </div>
+        <p className="max-w-xs text-xs text-muted-foreground">{failed.message}</p>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => handle(failed.file)}
+            className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            <RotateCw className="h-3.5 w-3.5" />
+            Retry
+          </button>
+          <button
+            type="button"
+            onClick={() => setFailed(null)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background px-3 py-1 text-xs font-medium text-foreground hover:bg-secondary"
+          >
+            Discard
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setFailed(null);
+              ref.current?.click();
+            }}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background px-3 py-1 text-xs font-medium text-foreground hover:bg-secondary"
+          >
+            Choose another
+          </button>
+        </div>
+        <input
+          ref={ref}
+          type="file"
+          accept="image/*,video/*"
+          hidden
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) handle(f);
+            e.target.value = "";
+          }}
+        />
       </div>
     );
   }
