@@ -80,15 +80,15 @@ function AdminPage() {
   });
 
   const setRedemption = useMutation({
-    mutationFn: async ({ id, status, note }: { id: string; status: "paid" | "rejected" | "processing"; note?: string }) => {
-      const patch: Record<string, unknown> = { status };
-      if (note) patch.admin_note = note;
+    mutationFn: async ({ id, status, note }: { id: string; status: "paid" | "rejected" | "approved"; note?: string }) => {
+      const patch: { status: typeof status; admin_notes?: string; paid_at?: string } = { status };
+      if (note) patch.admin_notes = note;
       if (status === "paid") patch.paid_at = new Date().toISOString();
       const { error } = await supabase.from("redemptions").update(patch).eq("id", id);
       if (error) throw error;
     },
     onSuccess: (_d, vars) => {
-      toast.success(vars.status === "paid" ? "Marked paid ✓" : vars.status === "rejected" ? "Rejected & refunded" : "Marked processing");
+      toast.success(vars.status === "paid" ? "Marked paid ✓" : vars.status === "rejected" ? "Rejected & refunded" : "Approved");
       queryClient.invalidateQueries({ queryKey: ["admin-redemptions"] });
     },
     onError: (e: Error) => toast.error(e.message),
