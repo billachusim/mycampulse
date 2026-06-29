@@ -2,10 +2,11 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/lib/profile";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ImageUploader } from "@/components/image-uploader";
 import { toast } from "sonner";
 
 export function Composer({ open, onOpenChange, defaultCommunityId }: {
@@ -16,6 +17,7 @@ export function Composer({ open, onOpenChange, defaultCommunityId }: {
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
   const [body, setBody] = useState("");
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [communityId, setCommunityId] = useState<string>(defaultCommunityId ?? "school");
 
   const { data: communities = [] } = useQuery({
@@ -35,12 +37,13 @@ export function Composer({ open, onOpenChange, defaultCommunityId }: {
   const create = useMutation({
     mutationFn: async () => {
       if (!profile?.id || !profile.primary_school_id) throw new Error("Finish onboarding first");
+      const media = imageUrl ? [{ type: "image", url: imageUrl }] : [];
       const payload = {
         author_id: profile.id,
         school_id: profile.primary_school_id,
         community_id: communityId === "school" ? null : communityId,
         body: body.trim(),
-        media: [],
+        media,
       };
       const { error } = await supabase.from("posts").insert(payload);
       if (error) throw error;
@@ -48,6 +51,7 @@ export function Composer({ open, onOpenChange, defaultCommunityId }: {
     onSuccess: () => {
       toast.success("Posted to your campus · +10 Campoints");
       setBody("");
+      setImageUrl(null);
       onOpenChange(false);
       queryClient.invalidateQueries({ queryKey: ["feed"] });
       queryClient.invalidateQueries({ queryKey: ["wallet"] });
@@ -60,15 +64,17 @@ export function Composer({ open, onOpenChange, defaultCommunityId }: {
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="font-display text-2xl">What's happening on campus?</DialogTitle>
+          <DialogDescription className="sr-only">Share an update, photo, or question with your campus.</DialogDescription>
         </DialogHeader>
         <Textarea
           autoFocus
           value={body}
           onChange={(e) => setBody(e.target.value)}
           placeholder="Share gist, ask a question, drop a vibe…"
-          rows={5}
+          rows={4}
           className="resize-none border-border/60 bg-background text-base"
         />
+        <ImageUploader value={imageUrl} onChange={setImageUrl} folder="posts" label="Add a photo (optional)" />
         <div className="flex items-center justify-between gap-3">
           <Select value={communityId} onValueChange={setCommunityId}>
             <SelectTrigger className="w-auto min-w-[10rem] bg-secondary"><SelectValue /></SelectTrigger>
@@ -81,7 +87,7 @@ export function Composer({ open, onOpenChange, defaultCommunityId }: {
               ))}
             </SelectContent>
           </Select>
-          <Button onClick={() => create.mutate()} disabled={!body.trim() || create.isPending} className="brand-gradient text-primary-foreground">
+          <Button onClick={() => create.mutate()} disabled={(!body.trim() && !imageUrl) || create.isPending} className="brand-gradient text-primary-foreground">
             {create.isPending ? "Posting…" : "Post"}
           </Button>
         </div>

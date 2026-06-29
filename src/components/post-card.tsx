@@ -15,13 +15,14 @@ export type FeedPost = {
   like_count: number;
   comment_count: number;
   hidden: boolean;
+  media?: Array<{ type?: string; url: string }> | null;
   author: { id: string; display_name: string | null; avatar_url: string | null; verified: boolean } | null;
   school: { short_name: string; id: string } | null;
   community: { id: string; name: string; kind: string } | null;
 };
 
 export const POST_SELECT =
-  "id, body, created_at, like_count, comment_count, hidden, author:profiles!posts_author_id_profiles_fkey(id, display_name, avatar_url, verified), school:schools(id, short_name), community:communities(id, name, kind)";
+  "id, body, created_at, like_count, comment_count, hidden, media, author:profiles!posts_author_id_profiles_fkey(id, display_name, avatar_url, verified), school:schools(id, short_name), community:communities(id, name, kind)";
 
 export function PostCard({ post }: { post: FeedPost }) {
   const { user } = useAuthUser();
@@ -121,6 +122,11 @@ export function PostCard({ post }: { post: FeedPost }) {
       <Link to="/post/$id" params={{ id: post.id }} className="mt-3 block whitespace-pre-wrap text-[15px] leading-relaxed">
         {post.body}
       </Link>
+      {Array.isArray(post.media) && post.media.length > 0 && post.media[0]?.url && (
+        <Link to="/post/$id" params={{ id: post.id }} className="mt-3 block overflow-hidden rounded-2xl border border-border/60">
+          <img src={post.media[0].url} alt="" className="max-h-[480px] w-full object-cover" loading="lazy" />
+        </Link>
+      )}
       <footer className="mt-3 flex items-center gap-1 text-sm text-muted-foreground">
         <button onClick={() => toggleLike.mutate()} className={`flex items-center gap-1.5 rounded-md px-2 py-1 hover:bg-secondary ${liked ? "text-primary" : ""}`}>
           <Heart className={`h-4 w-4 ${liked ? "fill-current" : ""}`} /> {post.like_count}
