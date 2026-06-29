@@ -34,7 +34,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Top bar */}
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/85 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/home" className="flex items-center gap-2">
             <span className="grid h-8 w-8 place-items-center rounded-lg brand-gradient text-primary-foreground font-display text-lg">c</span>
             <span className="font-display text-xl">campulse</span>
             {profile?.school && (
