@@ -36,8 +36,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/85 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
           <Link to="/home" className="flex items-center gap-2">
-            <span className="grid h-8 w-8 place-items-center rounded-lg brand-gradient text-primary-foreground font-display text-lg">c</span>
-            <span className="font-display text-xl">campulse</span>
+            <BrandLogo size={32} withWordmark wordmarkClassName="text-xl" />
             {profile?.school && (
               <span className="ml-2 hidden rounded-full bg-secondary px-2 py-0.5 text-xs text-secondary-foreground sm:inline">
                 {profile.school.short_name}
