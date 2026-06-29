@@ -1,87 +1,51 @@
-## 1. Tagline swap — "Your Campus Heartbeat"
+## Goal
+Turn `/discover` from a flat list of school cards into a real **Trending** page that gives users a reason to tap in.
 
-Replace the current tagline everywhere it surfaces:
-- `src/routes/index.tsx` — landing hero subhead, `head()` title/description, OG/Twitter tags.
-- `src/routes/__root.tsx` — default `<title>` + meta description.
-- `public/manifest.webmanifest` — `description`.
-- `src/routes/auth.tsx` — sidebar tagline.
-- `README`/footer copy referencing "Your campus online".
+## Changes
 
-Keep "Campulse" as the brand; only the tagline line changes.
+### 1. Rename the page intent
+- Header changes from "Other campuses" → **"Trending across campuses"** with a secondary line: "What students everywhere are talking about right now."
+- Add a small tab bar at the top: **Trending posts · Campuses · Communities** (default = Trending posts).
 
-## 2. Campoints v1 — strategy
+### 2. Trending posts rail (new — default tab)
+Top of the page, before the campus grid:
+- Pull the top ~10 posts across all schools from the last 7 days, scored by `like_count * 2 + comment_count * 3` (recency-weighted: divide by `hours_since_post + 6`).
+- Render with the existing `PostCard` so likes, share-for-Campoints, and report all keep working.
+- "See more" link scrolls to / loads next page.
 
-**Earning rules (rate-limited, anti-spam):**
-| Action | Points | Cap |
-|---|---|---|
-| Daily check-in (open app + tap) | 5 | 1/day |
-| 3-day / 7-day / 30-day streak bonus | 10 / 25 / 100 | streak-based |
-| Create a post | 10 | 5 posts/day count |
-| Comment | 2 | 20/day count |
-| Receive a like on your post | 1 | 50/day count |
-| Receive a comment on your post | 3 | 30/day count |
-| Refer a friend (they sign up + verify school email) | 200 | unlimited |
-| Friend's first post earns | 50 bonus | once per referral |
-| Share a post externally via tracked link (first click from a new device) | 5 | 10/day count |
-| Complete profile (avatar + bio + dept) | 50 | once |
-| First-week onboarding quests | 25–100 each | once |
+### 3. School cards — give them a heartbeat
+Each card in the Campuses grid gains:
+- **Cover strip** — keep the gradient as a fallback, but overlay the most-liked recent post's first image (if any) for that school. Falls back to the gradient when the campus has no image post yet.
+- **Live stats row** under the school name: `👥 {member_count} students · 📣 {posts_last_7d} posts this week`.
+- **One trending snippet** — the single top post from that school in the last 7 days, shown as a 2-line teaser with author avatar + name + like count. Tapping it opens the post directly (not the school page).
+- A subtle "Open campus →" affordance at the bottom keeps the existing school-page navigation.
 
-All earn events go through a single `award_campoints(user, reason, amount, ref)` Postgres function that enforces caps server-side. No client can mint points.
+### 4. People to follow strip (engagement booster)
+Below trending posts: a horizontal scroller of 8–12 suggested students you're not yet connected to, weighted toward:
+- Same school (if user has one),
+- Highest follower / connection count,
+- Most active in the last 7 days.
 
-**Redemption (v1 launch catalog):**
-- **Airtime / Data top-up** (MTN, Glo, Airtel, 9mobile) — pay via VTU provider (Reloadly or Airtimenigeria). Real cost, low fraud risk, instant fulfilment. Default first redemption.
-- **Cash to Naira** — withdraw to bank/Opay via Paystack Transfers. Minimum ₦1,000 (= 10,000 Campoints at ₦0.10/point). Requires verified school email + BVN-linked account name match. Manual approval queue for first 30 days, then auto-approve under threshold.
+Each chip: avatar, name, school short_name, "Connect" button (reuses existing connection request mutation).
 
-**Conversion rate (starting):** 10 Campoints = ₦1. Tune after pilot.
-**Anti-abuse:** unique phone (OTP) at signup, one account per device fingerprint, manual review for >₦5k/week, school-email verification before any cash-out.
+### 5. Trending communities strip
+A second horizontal scroller: top 8 communities by new posts in the last 7 days, across all schools. Tapping opens `/community/$id`. Helps users discover clubs / SUG / marketplace activity beyond their own school.
 
-## 3. What gets built this turn
+### 6. Empty / quiet states
+- If a school has zero posts in the last 7 days → snippet area shows muted "No buzz this week — be the first." instead of being blank.
+- If trending posts overall < 3 (e.g. brand new install) → fall back to "Newest from your network" so the page is never empty.
 
-**Schema (one migration):**
-- `campoints_ledger` — `user_id, delta, reason (enum), ref_type, ref_id, created_at`. Append-only.
-- `campoints_balances` — materialized per-user balance (trigger-maintained for fast reads).
-- `daily_checkins` — `user_id, date`, unique → enforces 1/day.
-- `referrals` — `referrer_id, referred_id, code, status (pending/qualified/rewarded), created_at`.
-- `referral_codes` — one stable code per user (e.g. first 6 chars of UUID + handle).
-- `share_clicks` — `post_id, sharer_id, fingerprint_hash, created_at` for share-reward dedupe.
-- `redemptions` — `user_id, kind (airtime|cash), amount_points, amount_naira, payload jsonb, status (pending/approved/paid/failed/rejected), provider_ref, created_at`.
-- `redemption_quests` — seed table for one-time onboarding quests.
+## Technical notes
+- All new data fetched via `useQuery` in the component (browser supabase client; RLS already allows authenticated reads on `posts`, `profiles`, `communities`).
+- New queries:
+  - `trending-posts-global` — single select on `posts` with `profiles!posts_author_id_profiles_fkey`, `schools`, filtered by `created_at > now() - 7d`, sorted in JS by the score above.
+  - `school-trending-snippets` — one query that pulls the latest 50 posts of last 7 days with `school_id`, then reduces in-memory to one top post per school (avoids N+1).
+  - `suggested-people` — `profiles` left-joined against `connections` to exclude existing ones; limit 12.
+  - `trending-communities` — `communities` joined to `posts` count in last 7d.
+- No schema changes, no new server functions, no new tables. Pure frontend on top of what's already there.
+- Files touched: `src/routes/_authenticated/discover.tsx` (rewrite). Possibly extract small `<TrendingPostMini />` and `<SuggestedPersonChip />` components inline in the same file to keep it self-contained.
 
-Plus a security-definer `award_campoints()` function and triggers on `posts`/`likes`/`comments` that call it with the right cap checks.
-
-GRANTs + RLS on every new public table.
-
-**Server functions (TanStack `createServerFn`, all `requireSupabaseAuth`):**
-- `claimDailyCheckin` — awards check-in + streak bonus.
-- `getMyWallet` — balance, recent ledger, current streak, referral code/stats.
-- `redeemAirtime({ network, phone, amount })` — debits ledger, creates pending `redemption`, calls VTU provider (stubbed if `VTU_API_KEY` not set), updates status.
-- `requestCashOut({ amount, bank_code, account_number, account_name })` — debits ledger, queues for admin approval.
-- `applyReferralCode({ code })` — called during onboarding; sets `referrer_id` on the new user's profile; awards referrer on qualification.
-- `trackShareClick({ post_id, fingerprint })` — public-ish endpoint for tracked share links.
-
-**UI:**
-- `src/routes/_authenticated/wallet.tsx` — Campoints wallet: big balance card, "Claim daily +5" button, streak meter, ledger history, "How to earn" accordion, redemption catalog (Airtime / Data / Cash-out), referral card with shareable link + qualified-vs-pending counts.
-- Wallet entry in the desktop side rail + a coin chip in the top bar showing live balance (links to `/wallet`).
-- `src/routes/_authenticated/redeem.airtime.tsx`, `redeem.cash.tsx` — focused redemption flows with confirmation step.
-- `src/routes/_authenticated/onboarding.tsx` — add optional "Got a referral code?" field; award profile-complete points when finished.
-- `src/routes/_authenticated/admin.tsx` — add a "Cash-out approvals" tab listing pending `redemptions` (approve / reject / mark paid + paste provider ref).
-- `src/components/composer.tsx` — toast on successful post mentions points earned ("+10 Campoints").
-- Landing page — add a "Earn Campoints" strip explaining the program (3 cards: post, refer, cash out).
-
-**Realtime:** subscribe wallet page to `campoints_ledger` inserts for the current user so balance ticks up live.
-
-**Secrets:** none required for the v1 build — VTU + Paystack Transfers ship as stubs that mark redemptions `pending` until you're ready to wire providers. We'll add `PAYSTACK_SECRET_KEY` and a VTU provider key in a follow-up turn when you're ready to flip cash-out live.
-
-## 4. Out of scope (next iterations)
-- Live VTU/Paystack wiring + KYC/BVN check (need provider accounts + secrets).
-- Vendor marketplace (food/printing) and event-ticket redemption — needs a vendor app + QR redemption flow; large surface, separate build.
-- Phone OTP at signup (currently email-only). Recommend adding before cash-out goes live.
-- Leaderboards, badges, level-ups (motivational layer once ledger is in place).
-
-## 5. Marketing rollout I'd suggest alongside this
-- **Campus ambassador program**: top 1 referrer per school each month gets ₦5k bonus; surface a per-school referral leaderboard.
-- **Launch quest week**: "Post 3 times + invite 1 friend = ₦200 airtime instantly" — uses the airtime redemption above.
-- **Class-rep partnerships**: SUG/class reps get a special badge + 2x referral points for first 50 sign-ups in their dept.
-- **WhatsApp-first sharing**: every post has a "Share to WhatsApp" tracked link that pays the sharer per unique click (capped). WhatsApp is how Nigerian campuses actually distribute things.
-
-Want me to also draft the launch-quest copy and an in-app "How Campoints work" page as part of the build? I'll include it if you say yes when approving.
+## Out of scope (will mention as follow-ups, not building now)
+- Replacing the cover image with an AI-picked "image of the week" per campus.
+- A real per-school trending score stored in the DB (cron-refreshed).
+- Notifications when a post from another campus you peeked at blows up.
