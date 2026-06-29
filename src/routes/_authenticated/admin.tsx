@@ -54,6 +54,76 @@ function AdminPage() {
     },
   });
 
+  const allEvents = useQuery({
+    queryKey: ["admin-events"],
+    enabled: tab === "events",
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("events")
+        .select("id, title, status, starts_at, location, cover_url, rsvp_count, host:profiles!events_host_id_fkey(id, display_name), school:schools(short_name)")
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const allListings = useQuery({
+    queryKey: ["admin-listings"],
+    enabled: tab === "listings",
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("marketplace_items")
+        .select("id, title, status, price_naira, image_url, category, seller:profiles!marketplace_items_seller_id_fkey(id, display_name), school:schools(short_name)")
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const setEventStatus = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: "active" | "hidden" }) => {
+      const { error } = await supabase.from("events").update({ status }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, vars) => {
+      toast.success(vars.status === "hidden" ? "Event hidden" : "Event restored");
+      queryClient.invalidateQueries({ queryKey: ["admin-events"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deleteEvent = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("events").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Event deleted"); queryClient.invalidateQueries({ queryKey: ["admin-events"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const setListingStatus = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: "active" | "hidden" | "sold" }) => {
+      const { error } = await supabase.from("marketplace_items").update({ status }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, vars) => {
+      toast.success(vars.status === "hidden" ? "Listing hidden" : vars.status === "sold" ? "Marked sold" : "Listing restored");
+      queryClient.invalidateQueries({ queryKey: ["admin-listings"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deleteListing = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("marketplace_items").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Listing deleted"); queryClient.invalidateQueries({ queryKey: ["admin-listings"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const hide = useMutation({
     mutationFn: async (postId: string) => {
       const { error } = await supabase.from("posts").update({ hidden: true }).eq("id", postId);
