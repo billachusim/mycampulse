@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuthUser, timeAgo, initials } from "@/lib/profile";
 import { claimShare } from "@/lib/campoints.functions";
 import { toast } from "sonner";
+import { PostVideo } from "@/components/post-video";
 
 export type FeedPost = {
   id: string;
@@ -124,9 +125,7 @@ export function PostCard({ post }: { post: FeedPost }) {
       </Link>
       {Array.isArray(post.media) && post.media.length > 0 && post.media[0]?.url && (
         post.media[0].type === "video" ? (
-          <div className="mt-3 overflow-hidden rounded-2xl border border-border/60 bg-black">
-            <video src={post.media[0].url} controls playsInline preload="metadata" className="max-h-[480px] w-full object-contain" />
-          </div>
+          <PostVideo src={post.media[0].url} />
         ) : (
           <Link to="/post/$id" params={{ id: post.id }} className="mt-3 block overflow-hidden rounded-2xl border border-border/60">
             <img src={post.media[0].url} alt="" className="max-h-[480px] w-full object-cover" loading="lazy" />
