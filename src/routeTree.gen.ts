@@ -29,6 +29,7 @@ import { Route as AuthenticatedSchoolSchoolIdRouteImport } from './routes/_authe
 import { Route as AuthenticatedRedeemCashRouteImport } from './routes/_authenticated/redeem.cash'
 import { Route as AuthenticatedRedeemAirtimeRouteImport } from './routes/_authenticated/redeem.airtime'
 import { Route as AuthenticatedPostIdRouteImport } from './routes/_authenticated/post.$id'
+import { Route as AuthenticatedMarketNewRouteImport } from './routes/_authenticated/market.new'
 import { Route as AuthenticatedEventsNewRouteImport } from './routes/_authenticated/events.new'
 import { Route as AuthenticatedCommunityIdRouteImport } from './routes/_authenticated/community.$id'
 
@@ -135,6 +136,11 @@ const AuthenticatedPostIdRoute = AuthenticatedPostIdRouteImport.update({
   path: '/post/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMarketNewRoute = AuthenticatedMarketNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AuthenticatedMarketRoute,
+} as any)
 const AuthenticatedEventsNewRoute = AuthenticatedEventsNewRouteImport.update({
   id: '/new',
   path: '/new',
@@ -156,13 +162,14 @@ export interface FileRoutesByFullPath {
   '/events': typeof AuthenticatedEventsRouteWithChildren
   '/home': typeof AuthenticatedHomeRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
-  '/market': typeof AuthenticatedMarketRoute
+  '/market': typeof AuthenticatedMarketRouteWithChildren
   '/messages': typeof AuthenticatedMessagesRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/community/$id': typeof AuthenticatedCommunityIdRoute
   '/events/new': typeof AuthenticatedEventsNewRoute
+  '/market/new': typeof AuthenticatedMarketNewRoute
   '/post/$id': typeof AuthenticatedPostIdRoute
   '/redeem/airtime': typeof AuthenticatedRedeemAirtimeRoute
   '/redeem/cash': typeof AuthenticatedRedeemCashRoute
@@ -179,13 +186,14 @@ export interface FileRoutesByTo {
   '/events': typeof AuthenticatedEventsRouteWithChildren
   '/home': typeof AuthenticatedHomeRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
-  '/market': typeof AuthenticatedMarketRoute
+  '/market': typeof AuthenticatedMarketRouteWithChildren
   '/messages': typeof AuthenticatedMessagesRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/community/$id': typeof AuthenticatedCommunityIdRoute
   '/events/new': typeof AuthenticatedEventsNewRoute
+  '/market/new': typeof AuthenticatedMarketNewRoute
   '/post/$id': typeof AuthenticatedPostIdRoute
   '/redeem/airtime': typeof AuthenticatedRedeemAirtimeRoute
   '/redeem/cash': typeof AuthenticatedRedeemCashRoute
@@ -204,13 +212,14 @@ export interface FileRoutesById {
   '/_authenticated/events': typeof AuthenticatedEventsRouteWithChildren
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/leaderboard': typeof AuthenticatedLeaderboardRoute
-  '/_authenticated/market': typeof AuthenticatedMarketRoute
+  '/_authenticated/market': typeof AuthenticatedMarketRouteWithChildren
   '/_authenticated/messages': typeof AuthenticatedMessagesRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/community/$id': typeof AuthenticatedCommunityIdRoute
   '/_authenticated/events/new': typeof AuthenticatedEventsNewRoute
+  '/_authenticated/market/new': typeof AuthenticatedMarketNewRoute
   '/_authenticated/post/$id': typeof AuthenticatedPostIdRoute
   '/_authenticated/redeem/airtime': typeof AuthenticatedRedeemAirtimeRoute
   '/_authenticated/redeem/cash': typeof AuthenticatedRedeemCashRoute
@@ -236,6 +245,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/community/$id'
     | '/events/new'
+    | '/market/new'
     | '/post/$id'
     | '/redeem/airtime'
     | '/redeem/cash'
@@ -259,6 +269,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/community/$id'
     | '/events/new'
+    | '/market/new'
     | '/post/$id'
     | '/redeem/airtime'
     | '/redeem/cash'
@@ -283,6 +294,7 @@ export interface FileRouteTypes {
     | '/_authenticated/wallet'
     | '/_authenticated/community/$id'
     | '/_authenticated/events/new'
+    | '/_authenticated/market/new'
     | '/_authenticated/post/$id'
     | '/_authenticated/redeem/airtime'
     | '/_authenticated/redeem/cash'
@@ -439,6 +451,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPostIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/market/new': {
+      id: '/_authenticated/market/new'
+      path: '/new'
+      fullPath: '/market/new'
+      preLoaderRoute: typeof AuthenticatedMarketNewRouteImport
+      parentRoute: typeof AuthenticatedMarketRoute
+    }
     '/_authenticated/events/new': {
       id: '/_authenticated/events/new'
       path: '/new'
@@ -467,6 +486,17 @@ const AuthenticatedEventsRouteChildren: AuthenticatedEventsRouteChildren = {
 const AuthenticatedEventsRouteWithChildren =
   AuthenticatedEventsRoute._addFileChildren(AuthenticatedEventsRouteChildren)
 
+interface AuthenticatedMarketRouteChildren {
+  AuthenticatedMarketNewRoute: typeof AuthenticatedMarketNewRoute
+}
+
+const AuthenticatedMarketRouteChildren: AuthenticatedMarketRouteChildren = {
+  AuthenticatedMarketNewRoute: AuthenticatedMarketNewRoute,
+}
+
+const AuthenticatedMarketRouteWithChildren =
+  AuthenticatedMarketRoute._addFileChildren(AuthenticatedMarketRouteChildren)
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedConnectionsRoute: typeof AuthenticatedConnectionsRoute
@@ -474,7 +504,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEventsRoute: typeof AuthenticatedEventsRouteWithChildren
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedLeaderboardRoute: typeof AuthenticatedLeaderboardRoute
-  AuthenticatedMarketRoute: typeof AuthenticatedMarketRoute
+  AuthenticatedMarketRoute: typeof AuthenticatedMarketRouteWithChildren
   AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
@@ -495,7 +525,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEventsRoute: AuthenticatedEventsRouteWithChildren,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedLeaderboardRoute: AuthenticatedLeaderboardRoute,
-  AuthenticatedMarketRoute: AuthenticatedMarketRoute,
+  AuthenticatedMarketRoute: AuthenticatedMarketRouteWithChildren,
   AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
