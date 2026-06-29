@@ -91,6 +91,12 @@ function Onboarding() {
           );
         }
       }
+      if (referralCode.trim()) {
+        try {
+          const r = await applyRef({ data: { code: referralCode.trim() } });
+          if (r.ok) toast.success("Referral applied — your friend earned 200 Campoints 🎉");
+        } catch { /* ignore */ }
+      }
       toast.success("All set — welcome to Campulse.");
       navigate({ to: "/home", replace: true });
     } catch (err) {
@@ -151,6 +157,10 @@ function Onboarding() {
           <div>
             <Label>Hostel <span className="text-muted-foreground">(optional)</span></Label>
             <Input value={hostel} onChange={(e) => setHostel(e.target.value)} placeholder="e.g. Mariere, Queens, Off-campus" />
+          </div>
+          <div>
+            <Label>Got a referral code? <span className="text-muted-foreground">(optional · earns your friend 200 Campoints)</span></Label>
+            <Input value={referralCode} onChange={(e) => setReferralCode(e.target.value.toUpperCase())} maxLength={16} placeholder="e.g. A1B2C3D" className="font-mono tracking-widest" />
           </div>
           <Button type="submit" disabled={saving || !schoolId} className="w-full brand-gradient text-primary-foreground">
             {saving ? "Setting up…" : "Enter Campulse"}
