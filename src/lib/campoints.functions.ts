@@ -12,16 +12,17 @@ function todayLagos(): string {
 
 async function award(userId: string, reason: string, delta: number, refType?: string, refId?: string, meta?: Record<string, unknown>) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin.rpc("award_campoints", {
+  const args: Record<string, unknown> = {
     _user: userId,
-    _reason: reason as never,
+    _reason: reason,
     _delta: delta,
-    _ref_type: refType ?? null,
-    _ref_id: refId ?? null,
-    _meta: (meta ?? {}) as never,
-  });
+    _meta: meta ?? {},
+  };
+  if (refType) args._ref_type = refType;
+  if (refId) args._ref_id = refId;
+  const { data, error } = await supabaseAdmin.rpc("award_campoints", args as never);
   if (error) throw new Error(error.message);
-  return data ?? 0;
+  return (data as number) ?? 0;
 }
 
 // --- claim daily check-in ---
