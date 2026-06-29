@@ -1,9 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { Heart, MessageCircle, Share2, Flag, MoreHorizontal } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuthUser, timeAgo, initials } from "@/lib/profile";
+import { claimShare } from "@/lib/campoints.functions";
 import { toast } from "sonner";
 
 export type FeedPost = {
