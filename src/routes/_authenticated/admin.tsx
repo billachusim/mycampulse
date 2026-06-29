@@ -166,9 +166,11 @@ function AdminPage() {
   return (
     <AppShell>
       <h1 className="mb-2 font-display text-3xl">Admin</h1>
-      <div className="mb-6 flex gap-2 border-b border-border/60">
+      <div className="mb-6 flex flex-wrap gap-2 border-b border-border/60">
         {([
           ["reports", `Moderation${reports.data ? ` · ${reports.data.length}` : ""}`],
+          ["events", `Events${allEvents.data ? ` · ${allEvents.data.length}` : ""}`],
+          ["listings", `Listings${allListings.data ? ` · ${allListings.data.length}` : ""}`],
           ["redemptions", `Cash-outs${redemptions.data ? ` · ${redemptions.data.length}` : ""}`],
         ] as [Tab, string][]).map(([key, label]) => (
           <button
