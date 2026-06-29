@@ -6,6 +6,7 @@ import { useProfile, initials } from "@/lib/profile";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Composer } from "@/components/composer";
 import { useQueryClient } from "@tanstack/react-query";
+import { BrandLogo } from "@/components/brand-logo";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { data: profile } = useProfile();
