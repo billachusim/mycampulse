@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuthUser, timeAgo, initials } from "@/lib/profile";
 import { claimShare } from "@/lib/campoints.functions";
 import { toast } from "sonner";
+import { PostVideo } from "@/components/post-video";
 
 export type FeedPost = {
   id: string;
