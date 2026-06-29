@@ -356,6 +356,7 @@ export type Database = {
           rsvp_count: number
           school_id: string | null
           starts_at: string
+          status: string
           title: string
           updated_at: string
         }
@@ -371,6 +372,7 @@ export type Database = {
           rsvp_count?: number
           school_id?: string | null
           starts_at: string
+          status?: string
           title: string
           updated_at?: string
         }
@@ -386,6 +388,7 @@ export type Database = {
           rsvp_count?: number
           school_id?: string | null
           starts_at?: string
+          status?: string
           title?: string
           updated_at?: string
         }
@@ -971,6 +974,8 @@ export type Database = {
         | "redemption_debit"
         | "redemption_refund"
         | "admin_adjust"
+        | "event_created"
+        | "listing_created"
       community_kind:
         | "faculty"
         | "department"
@@ -984,7 +989,7 @@ export type Database = {
       redemption_kind: "airtime" | "data" | "cash"
       redemption_status: "pending" | "approved" | "paid" | "failed" | "rejected"
       report_status: "open" | "resolved" | "dismissed"
-      report_target: "post" | "comment" | "user"
+      report_target: "post" | "comment" | "user" | "event" | "listing"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1128,6 +1133,8 @@ export const Constants = {
         "redemption_debit",
         "redemption_refund",
         "admin_adjust",
+        "event_created",
+        "listing_created",
       ],
       community_kind: [
         "faculty",
@@ -1143,7 +1150,7 @@ export const Constants = {
       redemption_kind: ["airtime", "data", "cash"],
       redemption_status: ["pending", "approved", "paid", "failed", "rejected"],
       report_status: ["open", "resolved", "dismissed"],
-      report_target: ["post", "comment", "user"],
+      report_target: ["post", "comment", "user", "event", "listing"],
     },
   },
 } as const
