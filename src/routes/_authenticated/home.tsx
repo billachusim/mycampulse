@@ -65,9 +65,9 @@ function HomeFeed() {
       <div className="space-y-10">
         <Rail
           icon={<Building2 className="h-4 w-4" />}
-          eyebrow="Your School"
-          title={profile?.school?.name ?? "Your campus"}
-          subtitle="Everyone in your school"
+          eyebrow={noSchool ? "All Schools" : "Your School"}
+          title={noSchool ? "Every campus" : (profile?.school?.name ?? "Your campus")}
+          subtitle={noSchool ? "Admin view — posts across every school" : "Everyone in your school"}
           posts={yourSchool.data}
           loading={yourSchool.isPending}
           emptyHint="No school-wide posts yet — be the first to say hi."
@@ -80,19 +80,22 @@ function HomeFeed() {
           posts={yourCommunities.data}
           loading={yourCommunities.isPending}
           emptyHint={
-            <>
-              No community posts yet.{" "}
-              <Link to="/school/$schoolId" params={{ schoolId: schoolId ?? "" }} className="text-primary underline">
-                Find your faculty
-              </Link>
-              .
-            </>
+            noSchool ? (
+              <>You haven't joined any communities yet. <Link to="/discover" className="text-primary underline">Pick a school</Link> to explore.</>
+            ) : (
+              <>
+                No community posts yet.{" "}
+                <Link to="/school/$schoolId" params={{ schoolId: schoolId ?? "" }} className="text-primary underline">
+                  Find your faculty
+                </Link>.
+              </>
+            )
           }
         />
         <Rail
           icon={<Flame className="h-4 w-4" />}
           eyebrow="Campus Trending"
-          title="What's hot on campus today"
+          title={noSchool ? "Trending across Campulse" : "What's hot on campus today"}
           subtitle="Last 24h, by engagement"
           posts={trending.data}
           loading={trending.isPending}
