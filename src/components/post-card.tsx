@@ -123,9 +123,15 @@ export function PostCard({ post }: { post: FeedPost }) {
         {post.body}
       </Link>
       {Array.isArray(post.media) && post.media.length > 0 && post.media[0]?.url && (
-        <Link to="/post/$id" params={{ id: post.id }} className="mt-3 block overflow-hidden rounded-2xl border border-border/60">
-          <img src={post.media[0].url} alt="" className="max-h-[480px] w-full object-cover" loading="lazy" />
-        </Link>
+        post.media[0].type === "video" ? (
+          <div className="mt-3 overflow-hidden rounded-2xl border border-border/60 bg-black">
+            <video src={post.media[0].url} controls playsInline preload="metadata" className="max-h-[480px] w-full object-contain" />
+          </div>
+        ) : (
+          <Link to="/post/$id" params={{ id: post.id }} className="mt-3 block overflow-hidden rounded-2xl border border-border/60">
+            <img src={post.media[0].url} alt="" className="max-h-[480px] w-full object-cover" loading="lazy" />
+          </Link>
+        )
       )}
       <footer className="mt-3 flex items-center gap-1 text-sm text-muted-foreground">
         <button onClick={() => toggleLike.mutate()} className={`flex items-center gap-1.5 rounded-md px-2 py-1 hover:bg-secondary ${liked ? "text-primary" : ""}`}>
