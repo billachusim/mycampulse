@@ -86,7 +86,7 @@ function Onboarding() {
         }
       }
       toast.success("All set — welcome to Campulse.");
-      navigate({ to: "/", replace: true });
+      navigate({ to: "/home", replace: true });
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
