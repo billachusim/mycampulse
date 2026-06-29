@@ -25,7 +25,7 @@ export type FeedPost = {
 export const POST_SELECT =
   "id, body, created_at, like_count, comment_count, hidden, media, author:profiles!posts_author_id_profiles_fkey(id, display_name, avatar_url, verified), school:schools(id, short_name), community:communities(id, name, kind)";
 
-export function PostCard({ post }: { post: FeedPost }) {
+export function PostCard({ post, readOnly = false }: { post: FeedPost; readOnly?: boolean }) {
   const { user } = useAuthUser();
   const queryClient = useQueryClient();
   const claimShareFn = useServerFn(claimShare);
@@ -133,18 +133,32 @@ export function PostCard({ post }: { post: FeedPost }) {
         )
       )}
       <footer className="mt-3 flex items-center gap-1 text-sm text-muted-foreground">
-        <button onClick={() => toggleLike.mutate()} className={`flex items-center gap-1.5 rounded-md px-2 py-1 hover:bg-secondary ${liked ? "text-primary" : ""}`}>
-          <Heart className={`h-4 w-4 ${liked ? "fill-current" : ""}`} /> {post.like_count}
-        </button>
-        <Link to="/post/$id" params={{ id: post.id }} className="flex items-center gap-1.5 rounded-md px-2 py-1 hover:bg-secondary">
-          <MessageCircle className="h-4 w-4" /> {post.comment_count}
-        </Link>
+        {readOnly ? (
+          <Link to="/auth" className="flex items-center gap-1.5 rounded-md px-2 py-1 hover:bg-secondary" title="Sign in to like">
+            <Heart className="h-4 w-4" /> {post.like_count}
+          </Link>
+        ) : (
+          <button onClick={() => toggleLike.mutate()} className={`flex items-center gap-1.5 rounded-md px-2 py-1 hover:bg-secondary ${liked ? "text-primary" : ""}`}>
+            <Heart className={`h-4 w-4 ${liked ? "fill-current" : ""}`} /> {post.like_count}
+          </button>
+        )}
+        {readOnly ? (
+          <Link to="/auth" className="flex items-center gap-1.5 rounded-md px-2 py-1 hover:bg-secondary">
+            <MessageCircle className="h-4 w-4" /> {post.comment_count}
+          </Link>
+        ) : (
+          <Link to="/post/$id" params={{ id: post.id }} className="flex items-center gap-1.5 rounded-md px-2 py-1 hover:bg-secondary">
+            <MessageCircle className="h-4 w-4" /> {post.comment_count}
+          </Link>
+        )}
         <button onClick={share} className="flex items-center gap-1.5 rounded-md px-2 py-1 hover:bg-secondary">
           <Share2 className="h-4 w-4" />
         </button>
-        <button onClick={() => report.mutate("Inappropriate")} className="ml-auto flex items-center gap-1.5 rounded-md px-2 py-1 hover:bg-secondary">
-          <Flag className="h-4 w-4" />
-        </button>
+        {!readOnly && (
+          <button onClick={() => report.mutate("Inappropriate")} className="ml-auto flex items-center gap-1.5 rounded-md px-2 py-1 hover:bg-secondary">
+            <Flag className="h-4 w-4" />
+          </button>
+        )}
       </footer>
     </article>
   );
