@@ -16,11 +16,15 @@ import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
+import { Route as AuthenticatedMarketRouteImport } from './routes/_authenticated/market'
+import { Route as AuthenticatedLeaderboardRouteImport } from './routes/_authenticated/leaderboard'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
+import { Route as AuthenticatedEventsRouteImport } from './routes/_authenticated/events'
 import { Route as AuthenticatedDiscoverRouteImport } from './routes/_authenticated/discover'
 import { Route as AuthenticatedConnectionsRouteImport } from './routes/_authenticated/connections'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedUIdRouteImport } from './routes/_authenticated/u.$id'
+import { Route as AuthenticatedTagTagRouteImport } from './routes/_authenticated/tag.$tag'
 import { Route as AuthenticatedSchoolSchoolIdRouteImport } from './routes/_authenticated/school.$schoolId'
 import { Route as AuthenticatedRedeemCashRouteImport } from './routes/_authenticated/redeem.cash'
 import { Route as AuthenticatedRedeemAirtimeRouteImport } from './routes/_authenticated/redeem.airtime'
@@ -61,9 +65,25 @@ const AuthenticatedMessagesRoute = AuthenticatedMessagesRouteImport.update({
   path: '/messages',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMarketRoute = AuthenticatedMarketRouteImport.update({
+  id: '/market',
+  path: '/market',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedLeaderboardRoute =
+  AuthenticatedLeaderboardRouteImport.update({
+    id: '/leaderboard',
+    path: '/leaderboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
   id: '/home',
   path: '/home',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedEventsRoute = AuthenticatedEventsRouteImport.update({
+  id: '/events',
+  path: '/events',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedDiscoverRoute = AuthenticatedDiscoverRouteImport.update({
@@ -85,6 +105,11 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
 const AuthenticatedUIdRoute = AuthenticatedUIdRouteImport.update({
   id: '/u/$id',
   path: '/u/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedTagTagRoute = AuthenticatedTagTagRouteImport.update({
+  id: '/tag/$tag',
+  path: '/tag/$tag',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedSchoolSchoolIdRoute =
@@ -122,7 +147,10 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/connections': typeof AuthenticatedConnectionsRoute
   '/discover': typeof AuthenticatedDiscoverRoute
+  '/events': typeof AuthenticatedEventsRoute
   '/home': typeof AuthenticatedHomeRoute
+  '/leaderboard': typeof AuthenticatedLeaderboardRoute
+  '/market': typeof AuthenticatedMarketRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -132,6 +160,7 @@ export interface FileRoutesByFullPath {
   '/redeem/airtime': typeof AuthenticatedRedeemAirtimeRoute
   '/redeem/cash': typeof AuthenticatedRedeemCashRoute
   '/school/$schoolId': typeof AuthenticatedSchoolSchoolIdRoute
+  '/tag/$tag': typeof AuthenticatedTagTagRoute
   '/u/$id': typeof AuthenticatedUIdRoute
 }
 export interface FileRoutesByTo {
@@ -140,7 +169,10 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/connections': typeof AuthenticatedConnectionsRoute
   '/discover': typeof AuthenticatedDiscoverRoute
+  '/events': typeof AuthenticatedEventsRoute
   '/home': typeof AuthenticatedHomeRoute
+  '/leaderboard': typeof AuthenticatedLeaderboardRoute
+  '/market': typeof AuthenticatedMarketRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -150,6 +182,7 @@ export interface FileRoutesByTo {
   '/redeem/airtime': typeof AuthenticatedRedeemAirtimeRoute
   '/redeem/cash': typeof AuthenticatedRedeemCashRoute
   '/school/$schoolId': typeof AuthenticatedSchoolSchoolIdRoute
+  '/tag/$tag': typeof AuthenticatedTagTagRoute
   '/u/$id': typeof AuthenticatedUIdRoute
 }
 export interface FileRoutesById {
@@ -160,7 +193,10 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/connections': typeof AuthenticatedConnectionsRoute
   '/_authenticated/discover': typeof AuthenticatedDiscoverRoute
+  '/_authenticated/events': typeof AuthenticatedEventsRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
+  '/_authenticated/leaderboard': typeof AuthenticatedLeaderboardRoute
+  '/_authenticated/market': typeof AuthenticatedMarketRoute
   '/_authenticated/messages': typeof AuthenticatedMessagesRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
@@ -170,6 +206,7 @@ export interface FileRoutesById {
   '/_authenticated/redeem/airtime': typeof AuthenticatedRedeemAirtimeRoute
   '/_authenticated/redeem/cash': typeof AuthenticatedRedeemCashRoute
   '/_authenticated/school/$schoolId': typeof AuthenticatedSchoolSchoolIdRoute
+  '/_authenticated/tag/$tag': typeof AuthenticatedTagTagRoute
   '/_authenticated/u/$id': typeof AuthenticatedUIdRoute
 }
 export interface FileRouteTypes {
@@ -180,7 +217,10 @@ export interface FileRouteTypes {
     | '/admin'
     | '/connections'
     | '/discover'
+    | '/events'
     | '/home'
+    | '/leaderboard'
+    | '/market'
     | '/messages'
     | '/onboarding'
     | '/settings'
@@ -190,6 +230,7 @@ export interface FileRouteTypes {
     | '/redeem/airtime'
     | '/redeem/cash'
     | '/school/$schoolId'
+    | '/tag/$tag'
     | '/u/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -198,7 +239,10 @@ export interface FileRouteTypes {
     | '/admin'
     | '/connections'
     | '/discover'
+    | '/events'
     | '/home'
+    | '/leaderboard'
+    | '/market'
     | '/messages'
     | '/onboarding'
     | '/settings'
@@ -208,6 +252,7 @@ export interface FileRouteTypes {
     | '/redeem/airtime'
     | '/redeem/cash'
     | '/school/$schoolId'
+    | '/tag/$tag'
     | '/u/$id'
   id:
     | '__root__'
@@ -217,7 +262,10 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/connections'
     | '/_authenticated/discover'
+    | '/_authenticated/events'
     | '/_authenticated/home'
+    | '/_authenticated/leaderboard'
+    | '/_authenticated/market'
     | '/_authenticated/messages'
     | '/_authenticated/onboarding'
     | '/_authenticated/settings'
@@ -227,6 +275,7 @@ export interface FileRouteTypes {
     | '/_authenticated/redeem/airtime'
     | '/_authenticated/redeem/cash'
     | '/_authenticated/school/$schoolId'
+    | '/_authenticated/tag/$tag'
     | '/_authenticated/u/$id'
   fileRoutesById: FileRoutesById
 }
@@ -287,11 +336,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMessagesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/market': {
+      id: '/_authenticated/market'
+      path: '/market'
+      fullPath: '/market'
+      preLoaderRoute: typeof AuthenticatedMarketRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/leaderboard': {
+      id: '/_authenticated/leaderboard'
+      path: '/leaderboard'
+      fullPath: '/leaderboard'
+      preLoaderRoute: typeof AuthenticatedLeaderboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/home': {
       id: '/_authenticated/home'
       path: '/home'
       fullPath: '/home'
       preLoaderRoute: typeof AuthenticatedHomeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/events': {
+      id: '/_authenticated/events'
+      path: '/events'
+      fullPath: '/events'
+      preLoaderRoute: typeof AuthenticatedEventsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/discover': {
@@ -320,6 +390,13 @@ declare module '@tanstack/react-router' {
       path: '/u/$id'
       fullPath: '/u/$id'
       preLoaderRoute: typeof AuthenticatedUIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/tag/$tag': {
+      id: '/_authenticated/tag/$tag'
+      path: '/tag/$tag'
+      fullPath: '/tag/$tag'
+      preLoaderRoute: typeof AuthenticatedTagTagRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/school/$schoolId': {
@@ -364,7 +441,10 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedConnectionsRoute: typeof AuthenticatedConnectionsRoute
   AuthenticatedDiscoverRoute: typeof AuthenticatedDiscoverRoute
+  AuthenticatedEventsRoute: typeof AuthenticatedEventsRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
+  AuthenticatedLeaderboardRoute: typeof AuthenticatedLeaderboardRoute
+  AuthenticatedMarketRoute: typeof AuthenticatedMarketRoute
   AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
@@ -374,6 +454,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRedeemAirtimeRoute: typeof AuthenticatedRedeemAirtimeRoute
   AuthenticatedRedeemCashRoute: typeof AuthenticatedRedeemCashRoute
   AuthenticatedSchoolSchoolIdRoute: typeof AuthenticatedSchoolSchoolIdRoute
+  AuthenticatedTagTagRoute: typeof AuthenticatedTagTagRoute
   AuthenticatedUIdRoute: typeof AuthenticatedUIdRoute
 }
 
@@ -381,7 +462,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedConnectionsRoute: AuthenticatedConnectionsRoute,
   AuthenticatedDiscoverRoute: AuthenticatedDiscoverRoute,
+  AuthenticatedEventsRoute: AuthenticatedEventsRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
+  AuthenticatedLeaderboardRoute: AuthenticatedLeaderboardRoute,
+  AuthenticatedMarketRoute: AuthenticatedMarketRoute,
   AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
@@ -391,6 +475,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRedeemAirtimeRoute: AuthenticatedRedeemAirtimeRoute,
   AuthenticatedRedeemCashRoute: AuthenticatedRedeemCashRoute,
   AuthenticatedSchoolSchoolIdRoute: AuthenticatedSchoolSchoolIdRoute,
+  AuthenticatedTagTagRoute: AuthenticatedTagTagRoute,
   AuthenticatedUIdRoute: AuthenticatedUIdRoute,
 }
 
