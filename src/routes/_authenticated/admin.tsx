@@ -46,7 +46,7 @@ function AdminPage() {
       const { data, error } = await supabase
         .from("redemptions")
         .select("id, kind, amount_points, amount_naira, status, created_at, payload, user:profiles!redemptions_user_id_profiles_fkey(id, display_name, avatar_url)")
-        .in("status", ["pending", "processing"])
+        .in("status", ["pending", "approved"])
         .order("created_at", { ascending: false })
         .limit(100);
       if (error) throw error;
@@ -166,7 +166,7 @@ function AdminPage() {
                 </dl>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Button size="sm" onClick={() => setRedemption.mutate({ id: r.id, status: "paid" })}>Mark paid</Button>
-                  <Button size="sm" variant="secondary" onClick={() => setRedemption.mutate({ id: r.id, status: "processing" })}>Processing</Button>
+                  <Button size="sm" variant="secondary" onClick={() => setRedemption.mutate({ id: r.id, status: "approved" })}>Approve</Button>
                   <Button size="sm" variant="outline" onClick={() => {
                     const note = window.prompt("Reason for rejection? (refund will be issued)") ?? undefined;
                     if (note !== undefined) setRedemption.mutate({ id: r.id, status: "rejected", note });
