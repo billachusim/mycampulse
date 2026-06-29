@@ -5,7 +5,7 @@ import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Plus, ShoppingBag, Tag } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/market")({
+export const Route = createFileRoute("/_authenticated/market/")({
   component: MarketPage,
 });
 

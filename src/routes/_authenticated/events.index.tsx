@@ -7,7 +7,7 @@ import { useAuthUser } from "@/lib/profile";
 import { CalendarDays, MapPin, Users, Check, Plus } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_authenticated/events")({
+export const Route = createFileRoute("/_authenticated/events/")({
   component: EventsPage,
 });
 
