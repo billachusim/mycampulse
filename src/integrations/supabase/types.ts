@@ -58,6 +58,7 @@ export type Database = {
           region: string | null
           review_notes: string | null
           reviewer_id: string | null
+          school_id: string | null
           scope_id: string | null
           scope_type: Database["public"]["Enums"]["ambassador_scope_type"]
           socials: Json
@@ -72,6 +73,7 @@ export type Database = {
           region?: string | null
           review_notes?: string | null
           reviewer_id?: string | null
+          school_id?: string | null
           scope_id?: string | null
           scope_type?: Database["public"]["Enums"]["ambassador_scope_type"]
           socials?: Json
@@ -86,6 +88,7 @@ export type Database = {
           region?: string | null
           review_notes?: string | null
           reviewer_id?: string | null
+          school_id?: string | null
           scope_id?: string | null
           scope_type?: Database["public"]["Enums"]["ambassador_scope_type"]
           socials?: Json
@@ -93,7 +96,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ambassador_applications_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ambassador_assets: {
         Row: {
@@ -172,6 +183,68 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "ambassadors"
             referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      ambassador_invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          invitee_email: string | null
+          invitee_user_id: string | null
+          inviter_id: string
+          message: string | null
+          region: string | null
+          school_id: string
+          scope_id: string | null
+          scope_type: Database["public"]["Enums"]["ambassador_scope_type"]
+          status: string
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          invitee_email?: string | null
+          invitee_user_id?: string | null
+          inviter_id: string
+          message?: string | null
+          region?: string | null
+          school_id: string
+          scope_id?: string | null
+          scope_type: Database["public"]["Enums"]["ambassador_scope_type"]
+          status?: string
+          token?: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          invitee_email?: string | null
+          invitee_user_id?: string | null
+          inviter_id?: string
+          message?: string | null
+          region?: string | null
+          school_id?: string
+          scope_id?: string | null
+          scope_type?: Database["public"]["Enums"]["ambassador_scope_type"]
+          status?: string
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ambassador_invitations_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -277,6 +350,7 @@ export type Database = {
           approved_by: string | null
           created_at: string
           region: string | null
+          school_id: string | null
           scope_id: string | null
           scope_type: Database["public"]["Enums"]["ambassador_scope_type"]
           status: Database["public"]["Enums"]["ambassador_status"]
@@ -291,6 +365,7 @@ export type Database = {
           approved_by?: string | null
           created_at?: string
           region?: string | null
+          school_id?: string | null
           scope_id?: string | null
           scope_type: Database["public"]["Enums"]["ambassador_scope_type"]
           status?: Database["public"]["Enums"]["ambassador_status"]
@@ -305,6 +380,7 @@ export type Database = {
           approved_by?: string | null
           created_at?: string
           region?: string | null
+          school_id?: string | null
           scope_id?: string | null
           scope_type?: Database["public"]["Enums"]["ambassador_scope_type"]
           status?: Database["public"]["Enums"]["ambassador_status"]
@@ -314,7 +390,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ambassadors_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       campoints_balances: {
         Row: {
@@ -1307,6 +1391,17 @@ export type Database = {
         Returns: boolean
       }
       is_active_ambassador: { Args: { _user_id: string }; Returns: boolean }
+      is_campus_ambassador_of: {
+        Args: { _school_id: string; _user: string }
+        Returns: boolean
+      }
+      resolve_school_id: {
+        Args: {
+          _scope_id: string
+          _scope_type: Database["public"]["Enums"]["ambassador_scope_type"]
+        }
+        Returns: string
+      }
     }
     Enums: {
       ambassador_app_status: "pending" | "approved" | "rejected" | "withdrawn"

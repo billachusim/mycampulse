@@ -49,13 +49,24 @@ export const applyForAmbassador = createServerFn({ method: "POST" })
     const { data: existingAmb } = await supabase.from("ambassadors").select("user_id, status").eq("user_id", userId).maybeSingle();
     if (existingAmb && existingAmb.status === "active") return { ok: false, reason: "already_ambassador" };
 
-    // If scope_id missing for a school scope, default to user's primary_school_id
+    // Resolve scope_id and derive school_id
     let scopeId = data.scope_id ?? null;
-    if (data.scope_type === "school" && !scopeId) {
-      const { data: profile } = await supabase.from("profiles").select("primary_school_id").eq("id", userId).maybeSingle();
-      scopeId = profile?.primary_school_id ?? null;
-    }
+    const { data: profile } = await supabase.from("profiles").select("primary_school_id").eq("id", userId).maybeSingle();
+    if (data.scope_type === "school" && !scopeId) scopeId = profile?.primary_school_id ?? null;
     if (!scopeId && data.scope_type !== "hostel") return { ok: false, reason: "scope_required" };
+
+    // school_id: for school scope it's the scope itself; for sub-scopes we resolve via helper
+    let schoolId: string | null = null;
+    if (data.scope_type === "school") {
+      schoolId = scopeId;
+    } else if (data.scope_type === "hostel") {
+      schoolId = profile?.primary_school_id ?? null;
+    } else if (scopeId) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: sid } = await supabaseAdmin.rpc("resolve_school_id", { _scope_type: data.scope_type, _scope_id: scopeId });
+      schoolId = (sid as string | null) ?? null;
+    }
+    if (data.scope_type !== "school" && !schoolId) return { ok: false, reason: "scope_required" };
 
     const { error } = await supabase.from("ambassador_applications").insert({
       user_id: userId,
@@ -63,6 +74,7 @@ export const applyForAmbassador = createServerFn({ method: "POST" })
       socials: data.socials ?? {},
       scope_type: data.scope_type,
       scope_id: scopeId,
+      school_id: schoolId,
       region: data.region ?? null,
     });
     if (error) {
@@ -290,6 +302,7 @@ export const adminReviewApplication = createServerFn({ method: "POST" })
       tier: data.tier ?? "ambassador",
       scope_type: app.scope_type,
       scope_id: app.scope_id,
+      school_id: app.school_id,
       region: app.region,
       status: "active",
       approved_by: context.userId,
@@ -308,6 +321,7 @@ export const adminReviewApplication = createServerFn({ method: "POST" })
     await award(app.user_id, "ambassador_bonus", 500, "ambassador", app.user_id, { event: "approved" });
     return { ok: true };
   });
+
 
 export const adminSetAmbassadorTier = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -397,6 +411,353 @@ export const adminReviewTaskCompletion = createServerFn({ method: "POST" })
     }).eq("id", comp.id);
     if (error) throw new Error(error.message);
 
+    if (data.decision === "approve") {
+      type TaskInfo = { id: string; title: string; reward_points: number } | null;
+      const rawTask = (comp as { task?: TaskInfo | TaskInfo[] }).task;
+      const task = Array.isArray(rawTask) ? rawTask[0] : rawTask;
+      const reward = task?.reward_points ?? 0;
+      if (reward > 0) {
+        await award(comp.ambassador_id, "ambassador_task_reward", reward, "task", comp.task_id, { title: task?.title });
+      }
+    }
+    return { ok: true };
+  });
+
+// ============================================================
+// CAMPUS AMBASSADOR — SUB-AMBASSADOR MANAGEMENT
+// ============================================================
+
+type SubScope = "faculty" | "department" | "hostel";
+
+async function getCampusAmbassadorRow(userId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin
+    .from("ambassadors")
+    .select("user_id, tier, scope_type, scope_id, status")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (!data || data.status !== "active" || data.tier !== "ambassador" || data.scope_type !== "school" || !data.scope_id) {
+    return null;
+  }
+  return { schoolId: data.scope_id as string };
+}
+
+async function assertCampusAmbassador(userId: string) {
+  const row = await getCampusAmbassadorRow(userId);
+  if (!row) throw new Error("Only active campus ambassadors can do this.");
+  return row;
+}
+
+// List pending sub-scope applications for my school
+export const listSubApplications = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { schoolId } = await assertCampusAmbassador(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("ambassador_applications")
+      .select("*, applicant:profiles!ambassador_applications_user_id_fkey(id, display_name, avatar_url, faculty_id, department_id, hostel)")
+      .eq("school_id", schoolId)
+      .in("scope_type", ["faculty", "department", "hostel"])
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+// Approve/reject a sub-scope application
+export const reviewSubApplication = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { applicationId: string; decision: "approve" | "reject"; tier?: "ambassador" | "senior"; notes?: string }) =>
+    z.object({
+      applicationId: z.string().uuid(),
+      decision: z.enum(["approve", "reject"]),
+      tier: z.enum(["ambassador", "senior"]).optional().default("ambassador"),
+      notes: z.string().max(1000).optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { schoolId } = await assertCampusAmbassador(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: app, error: appErr } = await supabaseAdmin
+      .from("ambassador_applications").select("*").eq("id", data.applicationId).maybeSingle();
+    if (appErr) throw new Error(appErr.message);
+    if (!app) throw new Error("Application not found");
+    if (app.school_id !== schoolId) throw new Error("Not your school");
+    if (!["faculty", "department", "hostel"].includes(app.scope_type)) throw new Error("Not a sub-scope application");
+
+    if (data.decision === "reject") {
+      const { error } = await supabaseAdmin.from("ambassador_applications").update({
+        status: "rejected", reviewer_id: context.userId, review_notes: data.notes ?? null,
+      }).eq("id", app.id);
+      if (error) throw new Error(error.message);
+      return { ok: true };
+    }
+
+    const { error: ambErr } = await supabaseAdmin.from("ambassadors").upsert({
+      user_id: app.user_id,
+      tier: data.tier ?? "ambassador",
+      scope_type: app.scope_type,
+      scope_id: app.scope_id,
+      school_id: app.school_id,
+      region: app.region,
+      status: "active",
+      approved_by: context.userId,
+      approved_at: new Date().toISOString(),
+      suspended_at: null,
+      suspend_reason: null,
+    }, { onConflict: "user_id" });
+    if (ambErr) throw new Error(ambErr.message);
+
+    const { error: appUpErr } = await supabaseAdmin.from("ambassador_applications").update({
+      status: "approved", reviewer_id: context.userId, review_notes: data.notes ?? null,
+    }).eq("id", app.id);
+    if (appUpErr) throw new Error(appUpErr.message);
+
+    await award(app.user_id, "ambassador_bonus", 200, "ambassador", app.user_id, { event: "sub_approved", by: context.userId });
+    return { ok: true };
+  });
+
+// List all sub-ambassadors under my school
+export const listSubAmbassadors = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { schoolId } = await assertCampusAmbassador(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("ambassadors")
+      .select("*, user:profiles!ambassadors_user_id_fkey(id, display_name, avatar_url, faculty_id, department_id, hostel)")
+      .eq("school_id", schoolId)
+      .in("scope_type", ["faculty", "department", "hostel"])
+      .order("approved_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+// Suspend / reinstate / promote a sub-ambassador
+export const setSubAmbassadorStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { userId: string; status: "active" | "suspended"; reason?: string }) =>
+    z.object({ userId: z.string().uuid(), status: z.enum(["active", "suspended"]), reason: z.string().max(500).optional() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { schoolId } = await assertCampusAmbassador(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: target } = await supabaseAdmin.from("ambassadors").select("school_id, scope_type").eq("user_id", data.userId).maybeSingle();
+    if (!target || target.school_id !== schoolId || target.scope_type === "school") throw new Error("Not authorized for this ambassador");
+    const patch = data.status === "suspended"
+      ? { status: "suspended" as const, suspended_at: new Date().toISOString(), suspend_reason: data.reason ?? null }
+      : { status: "active" as const, suspended_at: null, suspend_reason: null };
+    const { error } = await supabaseAdmin.from("ambassadors").update(patch).eq("user_id", data.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const setSubAmbassadorTier = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { userId: string; tier: "ambassador" | "senior" }) =>
+    z.object({ userId: z.string().uuid(), tier: z.enum(["ambassador", "senior"]) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { schoolId } = await assertCampusAmbassador(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: target } = await supabaseAdmin.from("ambassadors").select("school_id, scope_type").eq("user_id", data.userId).maybeSingle();
+    if (!target || target.school_id !== schoolId || target.scope_type === "school") throw new Error("Not authorized for this ambassador");
+    const { error } = await supabaseAdmin.from("ambassadors").update({ tier: data.tier }).eq("user_id", data.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// Invitations
+export const inviteSubAmbassador = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { email: string; scope_type: SubScope; scope_id?: string | null; region?: string | null; message?: string }) =>
+    z.object({
+      email: z.string().email().max(200),
+      scope_type: z.enum(["faculty", "department", "hostel"]),
+      scope_id: z.string().uuid().nullable().optional(),
+      region: z.string().max(120).nullable().optional(),
+      message: z.string().max(1000).optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { schoolId } = await assertCampusAmbassador(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Try to resolve invitee_user_id by email (best-effort; may be null)
+    const { data: existing } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
+    const match = existing?.users?.find((u) => u.email?.toLowerCase() === data.email.toLowerCase());
+    const { data: row, error } = await supabaseAdmin.from("ambassador_invitations").insert({
+      inviter_id: context.userId,
+      school_id: schoolId,
+      invitee_email: data.email.toLowerCase(),
+      invitee_user_id: match?.id ?? null,
+      scope_type: data.scope_type,
+      scope_id: data.scope_id ?? null,
+      region: data.region ?? null,
+      message: data.message ?? null,
+    }).select("*").single();
+    if (error) throw new Error(error.message);
+    return { ok: true, invitation: row };
+  });
+
+export const listMyInvitations = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { schoolId } = await assertCampusAmbassador(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("ambassador_invitations")
+      .select("*")
+      .eq("school_id", schoolId)
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const revokeInvitation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { error } = await supabase
+      .from("ambassador_invitations")
+      .update({ status: "revoked" })
+      .eq("id", data.id)
+      .eq("inviter_id", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// Look up an invitation by token (public-ish; requires auth to view)
+export const getInvitationByToken = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { token: string }) => z.object({ token: z.string().min(8).max(200) }).parse(d))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: inv } = await supabaseAdmin
+      .from("ambassador_invitations")
+      .select("*, school:schools(id, name, short_name)")
+      .eq("token", data.token)
+      .maybeSingle();
+    if (!inv) return { ok: false as const, reason: "not_found" as const };
+    if (inv.status !== "pending") return { ok: false as const, reason: inv.status as string };
+    if (new Date(inv.expires_at) < new Date()) return { ok: false as const, reason: "expired" as const };
+    return { ok: true as const, invitation: inv };
+  });
+
+export const acceptInvitation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { token: string }) => z.object({ token: z.string().min(8).max(200) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: inv } = await supabaseAdmin
+      .from("ambassador_invitations").select("*").eq("token", data.token).maybeSingle();
+    if (!inv) throw new Error("Invitation not found");
+    if (inv.status !== "pending") throw new Error(`Invitation ${inv.status}`);
+    if (new Date(inv.expires_at) < new Date()) throw new Error("Invitation expired");
+
+    // Block if already an active ambassador
+    const { data: existingAmb } = await supabaseAdmin.from("ambassadors").select("status").eq("user_id", context.userId).maybeSingle();
+    if (existingAmb && existingAmb.status === "active") throw new Error("You're already an ambassador");
+
+    // Create approved application + ambassador row atomically-ish
+    const { data: app, error: appErr } = await supabaseAdmin.from("ambassador_applications").insert({
+      user_id: context.userId,
+      motivation: `Accepted invitation from campus ambassador${inv.message ? `: ${inv.message}` : "."}`,
+      socials: {},
+      scope_type: inv.scope_type,
+      scope_id: inv.scope_id,
+      school_id: inv.school_id,
+      region: inv.region,
+      status: "approved",
+      reviewer_id: inv.inviter_id,
+      review_notes: "Auto-approved via invitation",
+    }).select("id").single();
+    if (appErr) throw new Error(appErr.message);
+
+    const { error: ambErr } = await supabaseAdmin.from("ambassadors").upsert({
+      user_id: context.userId,
+      tier: "ambassador",
+      scope_type: inv.scope_type,
+      scope_id: inv.scope_id,
+      school_id: inv.school_id,
+      region: inv.region,
+      status: "active",
+      approved_by: inv.inviter_id,
+      approved_at: new Date().toISOString(),
+    }, { onConflict: "user_id" });
+    if (ambErr) throw new Error(ambErr.message);
+
+    await supabaseAdmin.from("ambassador_invitations").update({
+      status: "accepted",
+      invitee_user_id: context.userId,
+      accepted_at: new Date().toISOString(),
+    }).eq("id", inv.id);
+
+    await award(context.userId, "ambassador_bonus", 200, "ambassador", context.userId, { event: "invited", by: inv.inviter_id });
+    return { ok: true, applicationId: app.id };
+  });
+
+// Scope options for invite/apply forms
+export const listSchoolScopes = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const row = await getCampusAmbassadorRow(context.userId);
+    if (!row) return { faculties: [], departments: [] };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: faculties } = await supabaseAdmin.from("faculties").select("id, name").eq("school_id", row.schoolId).order("name");
+    const facIds = (faculties ?? []).map((f) => f.id);
+    let departments: { id: string; name: string; faculty_id: string }[] = [];
+    if (facIds.length) {
+      const { data: deps } = await supabaseAdmin.from("departments").select("id, name, faculty_id").in("faculty_id", facIds).order("name");
+      departments = deps ?? [];
+    }
+    return { faculties: faculties ?? [], departments };
+  });
+
+// Task completions from sub-ambassadors awaiting review
+export const listSubTaskCompletions = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { schoolId } = await assertCampusAmbassador(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: subs } = await supabaseAdmin.from("ambassadors").select("user_id").eq("school_id", schoolId).in("scope_type", ["faculty", "department", "hostel"]);
+    const ids = (subs ?? []).map((s) => s.user_id);
+    if (!ids.length) return [];
+    const { data, error } = await supabaseAdmin
+      .from("ambassador_task_completions")
+      .select("*, task:ambassador_tasks(id, title, reward_points), ambassador:profiles!ambassador_task_completions_ambassador_id_fkey(id, display_name, avatar_url)")
+      .in("ambassador_id", ids)
+      .eq("status", "submitted")
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const reviewSubTaskCompletion = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { completionId: string; decision: "approve" | "reject" }) =>
+    z.object({ completionId: z.string().uuid(), decision: z.enum(["approve", "reject"]) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { schoolId } = await assertCampusAmbassador(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: comp } = await supabaseAdmin
+      .from("ambassador_task_completions")
+      .select("*, task:ambassador_tasks(id, title, reward_points), ambassador_row:ambassadors!ambassador_task_completions_ambassador_id_fkey(school_id, scope_type)")
+      .eq("id", data.completionId)
+      .maybeSingle();
+    if (!comp) throw new Error("Completion not found");
+    type AmbRow = { school_id: string | null; scope_type: string } | null;
+    const raw = (comp as { ambassador_row?: AmbRow | AmbRow[] }).ambassador_row;
+    const ambRow = Array.isArray(raw) ? raw[0] : raw;
+    if (!ambRow || ambRow.school_id !== schoolId || ambRow.scope_type === "school") throw new Error("Not authorized");
+    const { error } = await supabaseAdmin.from("ambassador_task_completions").update({
+      status: data.decision === "approve" ? "approved" : "rejected",
+      reviewer_id: context.userId,
+      reviewed_at: new Date().toISOString(),
+    }).eq("id", comp.id);
+    if (error) throw new Error(error.message);
     if (data.decision === "approve") {
       type TaskInfo = { id: string; title: string; reward_points: number } | null;
       const rawTask = (comp as { task?: TaskInfo | TaskInfo[] }).task;

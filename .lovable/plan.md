@@ -1,102 +1,90 @@
+## Goal
 
-## Audit: what already exists
+Let approved **Campus Ambassadors** (tier=`ambassador`, scope_type=`school`) invite and approve **Faculty / Department / Hostel** ambassadors under their school, without duplicating the existing application/approval architecture used for admin-approved campus ambassadors.
 
-**Referral data model (reusable as-is):**
-- `profiles.referral_code` (auto-generated 7-char code via `set_referral_code`)
-- `profiles.referred_by` (uuid → referrer)
-- `campoints_ledger` with reasons `referral_qualified` (200 pts) and `referral_first_post` (50 pts)
-- `applyReferralCode` server fn (onboarding + wallet apply flow)
-- Wallet page already shows referral code, referrals list, and share link
+The current schema already supports this — `ambassador_scope_type` already contains `faculty | department | hostel`, and `ambassadors` supports non-primary rows per scope. What's missing is: (1) an invitation/approval path controlled by the campus ambassador (not just admins), (2) sub-ambassador management UI on the campus ambassador dashboard, (3) RLS updates so campus ambassadors can act within their school.
 
-**Roles:** `app_role` enum = `admin | moderator | user`. `user_roles` table + `has_role()` security definer function. Clean base to extend.
+## Design decisions
 
-**Analytics:** ledger rows already carry `reason`, `ref_id`, `meta` — enough to count referrals per user. No campus/campaign attribution today.
+- **Reuse `ambassador_applications`.** Users still apply through the same table; only the reviewer changes. For faculty/dept/hostel scopes, a campus ambassador at the same `school` reviews it instead of an admin. Admins retain override.
+- **Introduce `ambassador_invitations`** as a lightweight table for campus ambassadors to proactively invite a specific user (by email or user_id) to a sub-scope. Accepting the invite creates a pre-approved application → ambassador row. This keeps the "apply" flow and the "invite" flow converging on the same review pipeline.
+- **Tier stays `ambassador`; sub-ambassadors are identified by `scope_type != 'school'`.** No new enum values, no new role. The one-primary-per-scope index already covers faculty/dept/hostel uniqueness.
+- **Parent linkage is derived, not stored.** A sub-ambassador's "parent" is the active campus ambassador whose `scope_type='school'` matches the sub's `school_id` (looked up via `faculties.school_id`, `departments → faculty → school`, `profiles.school_id` for hostel). This avoids denormalization drift. A helper SQL function `campus_ambassador_for(_scope_type, _scope_id)` returns that user.
+- **Rewards & campaigns unchanged.** Sub-ambassadors get their own campaign codes, tasks, and ledger events through the exact same tables. No change to `campoints_ledger` or `signup_attributions`.
 
-**Gaps for an ambassador program:**
-1. No ambassador role, tier, or state machine (applied / approved / suspended).
-2. No application workflow.
-3. No campaign / attribution beyond `referred_by`.
-4. No aggregation by school / faculty / department / hostel.
-5. No ambassador tasks, announcements, or marketing-asset store.
-6. No admin review UI.
+## Database changes (single migration)
 
-## Design principles
+1. **New table `ambassador_invitations`**
+   - `id`, `inviter_id` (campus ambassador), `invitee_email`, `invitee_user_id` (nullable until claimed), `scope_type` (faculty/department/hostel), `scope_id`, `region`, `token` (unique), `status` (`pending|accepted|revoked|expired`), `expires_at`, timestamps.
+   - RLS: inviter and invitee can read; inviter can insert/revoke only for their school's sub-scopes; admin full access.
+   - GRANTs for authenticated + service_role.
 
-- **Extend, do not duplicate.** Referral attribution stays on `profiles.referred_by`; ambassador features layer on top.
-- **Role via `user_roles`**, not a boolean on profile (per project security rules).
-- **Scope is data, not schema.** One ambassador per school today, faculty/department/hostel later, by adding rows — not tables.
-- **Attribution is a code, not a person.** A user can be referred by another student *or* by an ambassador campaign; both resolve to a `referred_by` uuid, with optional campaign metadata.
+2. **New security-definer helper `public.campus_ambassador_for(_scope_type, _scope_id) → uuid`**
+   - Resolves the school for the given sub-scope, returns the active campus ambassador's user_id.
+   - Used in RLS policies and server functions.
 
-## New database (single migration)
+3. **New helper `public.is_campus_ambassador_for(_user, _scope_type, _scope_id) → boolean`**
+   - Wrapper used by policies.
 
-1. `ALTER TYPE app_role ADD VALUE 'ambassador'` (+ optional `senior_ambassador`, `regional_lead` — or keep one role and use `tier` column; plan uses **one role + tier column** to avoid enum sprawl).
-2. `ambassador_applications` — user_id, motivation, socials jsonb, status (pending/approved/rejected/suspended), reviewer_id, review_notes, timestamps.
-3. `ambassadors` — user_id PK, tier (`ambassador|senior|regional_lead`), scope_type (`school|faculty|department|hostel|region`), scope_id (uuid, nullable for region), region text, status (`active|suspended`), approved_at, approved_by, suspended_at. Unique partial index `(scope_type, scope_id) WHERE status='active' AND tier='ambassador'` to enforce **one primary ambassador per campus**; senior/regional not constrained.
-4. `ambassador_campaigns` — id, ambassador_id, code (unique, uppercase), name, landing_path, active, created_at. Codes are distinct from personal `profiles.referral_code`; both resolve through `applyReferralCode`.
-5. `ambassador_tasks` — id, title, description, reward_points, starts_at, ends_at, scope filter (jsonb), created_by.
-6. `ambassador_task_completions` — task_id, ambassador_id, completed_at, evidence_url, status, reviewer_id.
-7. `ambassador_announcements` — id, title, body, audience (`all|tier|scope`), scope filter, published_at, author_id.
-8. `ambassador_assets` — id, title, kind (`image|pdf|video|copy`), storage_path (reuses `campus-media` bucket), tier_min, created_at.
-9. `signup_attributions` (optional; can be inlined into ledger meta initially) — user_id, referrer_id, campaign_id, campaign_code, source, created_at. Populated when `applyReferralCode` matches a personal code *or* a campaign code.
+4. **Extend RLS on `ambassador_applications`**
+   - Add policy: campus ambassador can `SELECT`/`UPDATE` applications where `scope_type IN (faculty,department,hostel)` and `is_campus_ambassador_for(auth.uid(), scope_type, scope_id)` is true. Only status transitions `pending → approved | rejected` allowed.
 
-**Ledger reuse:** add new `campoint_reason` values `ambassador_task_reward`, `ambassador_bonus`. Existing `referral_qualified` / `referral_first_post` continue to fire for personal codes — ambassador campaign codes reuse the same triggers via the `referred_by` link.
+5. **Extend RLS on `ambassadors`**
+   - Add policy: campus ambassador can `INSERT`/`UPDATE` (suspend, promote to `senior`) rows for sub-scopes under their school.
 
-All tables: GRANT + RLS. Ambassadors read their own rows; admins full access via `has_role(_user,'admin')`; announcements readable by ambassadors matching audience.
+6. **Extend RLS on `ambassador_task_completions`**
+   - Campus ambassador can review completions submitted by ambassadors under their school.
 
-## Server functions (new file `src/lib/ambassador.functions.ts`)
+7. **Optional: extend `ambassador_tasks`** so campus ambassadors can create tasks scoped to their school (`created_by = auth.uid()` + `scope.school_id = their school`). Admins still create global tasks.
 
-- `applyForAmbassador({ motivation, socials, scope_type, scope_id })`
-- `getMyAmbassadorDashboard()` — returns: application status, tier, scope, verified referrals (from ledger `referral_qualified`), active users (referrals with post in last 30d), campus rank, national rank, campaigns w/ counts, task list + completion state, announcements, assets.
-- `createCampaign({ name, code, landing_path })`
-- `completeTask({ taskId, evidenceUrl })`
-- `redeemCampaignCode({ code })` — thin wrapper; teaches `applyReferralCode` to accept campaign codes too (single change to that fn).
-- Admin-only (guarded by `has_role`): `reviewApplication({ id, decision, tier?, scope? })`, `promoteAmbassador({ userId, tier })`, `suspendAmbassador({ userId, reason })`, `publishAnnouncement`, `createTask`, `reviewTaskCompletion`, `uploadAsset`.
+No changes to `campoints_ledger`, `ambassador_campaigns`, `signup_attributions`, `profiles`, or `app_role`.
 
-## Attribution extension (minimal)
+## Server functions (extend `src/lib/ambassador.functions.ts`)
 
-Change `applyReferralCode` to:
-1. Look up personal code → set `referred_by` (today's behaviour).
-2. If not found, look up `ambassador_campaigns.code` → set `referred_by = campaign.ambassador_id` **and** insert a `signup_attributions` row with `campaign_id`.
-3. Award the same 200 pts to referrer/ambassador; ambassador gets an additional `ambassador_bonus` if `has_role` matches.
+- `inviteSubAmbassador({ email, scope_type, scope_id, region? })` — campus ambassador only; creates invitation with token, sends via existing email flow (or returns shareable link if email infra not wired).
+- `listMyInvitations()` / `revokeInvitation(id)`.
+- `acceptInvitation({ token })` — user-facing; if signed in, creates a pre-approved `ambassador_applications` row (status=`approved`) and an `ambassadors` row atomically; if not signed in, redirect to auth then resume.
+- `listPendingSubApplications()` — for campus ambassador dashboard.
+- `reviewSubApplication({ application_id, decision, notes })` — approve/reject; on approve, insert `ambassadors` row.
+- `listMySubAmbassadors()` — active/suspended sub-ambassadors under this campus.
+- `suspendSubAmbassador({ user_id, reason })` / `reinstateSubAmbassador({ user_id })` / `promoteSubAmbassador({ user_id, tier: 'senior' })`.
+- `reviewSubTaskCompletion({ completion_id, decision, notes })` — reuses existing award logic.
 
-Same code path works for share links `/?ref=CODE` → onboarding prefill (already implemented).
+All check `is_campus_ambassador_for` via RLS + explicit assertion inside handlers.
 
 ## UI
 
-- `src/routes/_authenticated/ambassador.apply.tsx` — application form (motivation, socials, requested scope).
-- `src/routes/_authenticated/ambassador.tsx` — Ambassador Dashboard (only for approved). Reuses `wallet.tsx` referral card patterns and adds:
-  - Verified referrals count, active-users count
-  - Campus rank / national rank cards
-  - Campaigns table with code + copy-link + clicks/signups
-  - Tasks list with claim/submit-evidence flow
-  - Announcements feed
-  - Marketing Assets grid (download links from `campus-media`)
-- `src/routes/_authenticated/admin.ambassadors.tsx` (or a tab on existing `admin.tsx`) — pending applications, active ambassador list, promote/suspend actions.
-- Wallet page: add a "Become a Campus Ambassador" card when the user is not one yet; link to apply.
+**`/ambassador` dashboard (existing) — add "Team" tab, visible only when the current user's row is `scope_type='school'`:**
 
-## What we reuse (no duplication)
+- **Invite** — form (email + scope picker: faculty/department/hostel + specific scope). Shows list of pending invitations with copy-link and revoke.
+- **Applications** — pending faculty/dept/hostel applications for the school; approve/reject inline.
+- **My sub-ambassadors** — grouped by scope_type; each row shows tier, status, campaigns count, referrals, points; actions: promote, suspend, message.
+- **Task reviews** — completions from sub-ambassadors awaiting approval.
 
-- `profiles.referral_code`, `profiles.referred_by`, ledger, `award_campoints`, `award_for_post` referral trigger.
-- `user_roles` + `has_role` for gating.
-- `campus-media` bucket for marketing assets.
-- Existing `admin.tsx` shell + `wallet.tsx` referral panel components.
+**`/ambassador/apply` (existing)** — add scope selector so faculty/dept/hostel applicants can pick their target scope. If a valid invitation token is in the URL, prefill scope + mark it as invited.
 
-## Scale notes
+**`/ambassador/invite/$token` (new lightweight route)** — accept invitation; calls `acceptInvitation` after auth.
 
-- All ranking queries indexed on `(school_id, referral_count)` via a materialised view refreshed hourly (or SQL view initially; upgrade later).
-- No per-school schema — everything keyed by `scope_type/scope_id`, so 500 schools × N ambassadors is just rows.
-- Campaign codes are indexed unique; attribution write path is O(1).
+**Admin dashboard** — unchanged, but the ambassadors tab gets a filter for scope_type so admins can see the whole hierarchy.
 
-## Delivery order
+## Attribution and rewards
 
-1. Migration: role tier column, tables, RLS, GRANTs, indexes, new ledger reasons.
-2. `ambassador.functions.ts` + attribution extension inside `applyReferralCode`.
-3. Apply page + dashboard route.
-4. Admin review UI.
-5. Wallet CTA linking into apply flow.
+No changes. Sub-ambassadors get personal referral codes and campaign codes through the existing paths. `signup_attributions.campaign_id` already carries the campaign, and `ambassador_bonus` fires for any active ambassador regardless of tier/scope.
 
-## Open questions before build
+## Scaling notes
 
-- Add distinct enum values `senior_ambassador` / `regional_lead`, or keep single `ambassador` role + `tier` column? (Plan uses tier column — simpler, no enum migrations later.)
-- Should campaign codes and personal referral codes share a single lookup namespace (must be globally unique) or separate? (Plan: single namespace, simpler UX.)
-- Approval scope for v1: only `school`, correct? (Plan assumes yes, with schema ready for faculty/department/hostel.)
+- Sub-ambassador → campus ambassador lookup is O(1) via `school_id` join; add indexes on `faculties(school_id)`, `departments(faculty_id)` if not already present.
+- All new policies use security-definer helpers so RLS stays non-recursive.
+- Invitations table stays small (expire + prune job later; not needed for v1).
+
+## Deliverables
+
+1. One migration adding `ambassador_invitations`, two helper functions, and the extended RLS policies.
+2. Extended `src/lib/ambassador.functions.ts` with invitation + sub-review functions.
+3. New "Team" tab in `src/routes/_authenticated/ambassador.index.tsx`.
+4. New route `src/routes/_authenticated/ambassador.invite.$token.tsx`.
+5. Small edit to `ambassador.apply.tsx` for scope selection + invite prefill.
+
+## Open question (non-blocking)
+
+Should sub-ambassador **application approval** by a campus ambassador award the same 200-pt referral qualification bonus, or a smaller sub-tier bonus? Default: same reward pool as existing, no new ledger reason.

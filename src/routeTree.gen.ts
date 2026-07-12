@@ -36,6 +36,7 @@ import { Route as AuthenticatedMarketNewRouteImport } from './routes/_authentica
 import { Route as AuthenticatedEventsNewRouteImport } from './routes/_authenticated/events.new'
 import { Route as AuthenticatedCommunityIdRouteImport } from './routes/_authenticated/community.$id'
 import { Route as AuthenticatedAmbassadorApplyRouteImport } from './routes/_authenticated/ambassador.apply'
+import { Route as AuthenticatedAmbassadorInviteTokenRouteImport } from './routes/_authenticated/ambassador.invite.$token'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -180,6 +181,12 @@ const AuthenticatedAmbassadorApplyRoute =
     path: '/ambassador/apply',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAmbassadorInviteTokenRoute =
+  AuthenticatedAmbassadorInviteTokenRouteImport.update({
+    id: '/ambassador/invite/$token',
+    path: '/ambassador/invite/$token',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -208,6 +215,7 @@ export interface FileRoutesByFullPath {
   '/ambassador/': typeof AuthenticatedAmbassadorIndexRoute
   '/events/': typeof AuthenticatedEventsIndexRoute
   '/market/': typeof AuthenticatedMarketIndexRoute
+  '/ambassador/invite/$token': typeof AuthenticatedAmbassadorInviteTokenRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -234,6 +242,7 @@ export interface FileRoutesByTo {
   '/ambassador': typeof AuthenticatedAmbassadorIndexRoute
   '/events': typeof AuthenticatedEventsIndexRoute
   '/market': typeof AuthenticatedMarketIndexRoute
+  '/ambassador/invite/$token': typeof AuthenticatedAmbassadorInviteTokenRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -264,6 +273,7 @@ export interface FileRoutesById {
   '/_authenticated/ambassador/': typeof AuthenticatedAmbassadorIndexRoute
   '/_authenticated/events/': typeof AuthenticatedEventsIndexRoute
   '/_authenticated/market/': typeof AuthenticatedMarketIndexRoute
+  '/_authenticated/ambassador/invite/$token': typeof AuthenticatedAmbassadorInviteTokenRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -294,6 +304,7 @@ export interface FileRouteTypes {
     | '/ambassador/'
     | '/events/'
     | '/market/'
+    | '/ambassador/invite/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -320,6 +331,7 @@ export interface FileRouteTypes {
     | '/ambassador'
     | '/events'
     | '/market'
+    | '/ambassador/invite/$token'
   id:
     | '__root__'
     | '/'
@@ -349,6 +361,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ambassador/'
     | '/_authenticated/events/'
     | '/_authenticated/market/'
+    | '/_authenticated/ambassador/invite/$token'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -548,6 +561,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAmbassadorApplyRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ambassador/invite/$token': {
+      id: '/_authenticated/ambassador/invite/$token'
+      path: '/ambassador/invite/$token'
+      fullPath: '/ambassador/invite/$token'
+      preLoaderRoute: typeof AuthenticatedAmbassadorInviteTokenRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -598,6 +618,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTagTagRoute: typeof AuthenticatedTagTagRoute
   AuthenticatedUIdRoute: typeof AuthenticatedUIdRoute
   AuthenticatedAmbassadorIndexRoute: typeof AuthenticatedAmbassadorIndexRoute
+  AuthenticatedAmbassadorInviteTokenRoute: typeof AuthenticatedAmbassadorInviteTokenRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -621,6 +642,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTagTagRoute: AuthenticatedTagTagRoute,
   AuthenticatedUIdRoute: AuthenticatedUIdRoute,
   AuthenticatedAmbassadorIndexRoute: AuthenticatedAmbassadorIndexRoute,
+  AuthenticatedAmbassadorInviteTokenRoute:
+    AuthenticatedAmbassadorInviteTokenRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
