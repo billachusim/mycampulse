@@ -236,6 +236,3 @@ function Metric({ icon, label, value }: { icon: React.ReactNode; label: string; 
     </div>
   );
 }
-
-// dead-code silencer for TextArea import (kept for future task submit ui)
-void Textarea;
