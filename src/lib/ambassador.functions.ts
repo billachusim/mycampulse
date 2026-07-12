@@ -330,9 +330,9 @@ export const adminSetAmbassadorStatus = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const patch: Record<string, unknown> = { status: data.status };
-    if (data.status === "suspended") { patch.suspended_at = new Date().toISOString(); patch.suspend_reason = data.reason ?? null; }
-    else { patch.suspended_at = null; patch.suspend_reason = null; }
+    const patch = data.status === "suspended"
+      ? { status: data.status, suspended_at: new Date().toISOString(), suspend_reason: data.reason ?? null }
+      : { status: data.status, suspended_at: null, suspend_reason: null };
     const { error } = await supabaseAdmin.from("ambassadors").update(patch).eq("user_id", data.userId);
     if (error) throw new Error(error.message);
     return { ok: true };
