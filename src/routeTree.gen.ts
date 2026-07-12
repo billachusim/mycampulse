@@ -25,6 +25,7 @@ import { Route as AuthenticatedConnectionsRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedMarketIndexRouteImport } from './routes/_authenticated/market.index'
 import { Route as AuthenticatedEventsIndexRouteImport } from './routes/_authenticated/events.index'
+import { Route as AuthenticatedAmbassadorIndexRouteImport } from './routes/_authenticated/ambassador.index'
 import { Route as AuthenticatedUIdRouteImport } from './routes/_authenticated/u.$id'
 import { Route as AuthenticatedTagTagRouteImport } from './routes/_authenticated/tag.$tag'
 import { Route as AuthenticatedSchoolSchoolIdRouteImport } from './routes/_authenticated/school.$schoolId'
@@ -119,6 +120,12 @@ const AuthenticatedEventsIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedEventsRoute,
   } as any)
+const AuthenticatedAmbassadorIndexRoute =
+  AuthenticatedAmbassadorIndexRouteImport.update({
+    id: '/ambassador/',
+    path: '/ambassador/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedUIdRoute = AuthenticatedUIdRouteImport.update({
   id: '/u/$id',
   path: '/u/$id',
@@ -198,6 +205,7 @@ export interface FileRoutesByFullPath {
   '/school/$schoolId': typeof AuthenticatedSchoolSchoolIdRoute
   '/tag/$tag': typeof AuthenticatedTagTagRoute
   '/u/$id': typeof AuthenticatedUIdRoute
+  '/ambassador/': typeof AuthenticatedAmbassadorIndexRoute
   '/events/': typeof AuthenticatedEventsIndexRoute
   '/market/': typeof AuthenticatedMarketIndexRoute
 }
@@ -223,6 +231,7 @@ export interface FileRoutesByTo {
   '/school/$schoolId': typeof AuthenticatedSchoolSchoolIdRoute
   '/tag/$tag': typeof AuthenticatedTagTagRoute
   '/u/$id': typeof AuthenticatedUIdRoute
+  '/ambassador': typeof AuthenticatedAmbassadorIndexRoute
   '/events': typeof AuthenticatedEventsIndexRoute
   '/market': typeof AuthenticatedMarketIndexRoute
 }
@@ -252,6 +261,7 @@ export interface FileRoutesById {
   '/_authenticated/school/$schoolId': typeof AuthenticatedSchoolSchoolIdRoute
   '/_authenticated/tag/$tag': typeof AuthenticatedTagTagRoute
   '/_authenticated/u/$id': typeof AuthenticatedUIdRoute
+  '/_authenticated/ambassador/': typeof AuthenticatedAmbassadorIndexRoute
   '/_authenticated/events/': typeof AuthenticatedEventsIndexRoute
   '/_authenticated/market/': typeof AuthenticatedMarketIndexRoute
 }
@@ -281,6 +291,7 @@ export interface FileRouteTypes {
     | '/school/$schoolId'
     | '/tag/$tag'
     | '/u/$id'
+    | '/ambassador/'
     | '/events/'
     | '/market/'
   fileRoutesByTo: FileRoutesByTo
@@ -306,6 +317,7 @@ export interface FileRouteTypes {
     | '/school/$schoolId'
     | '/tag/$tag'
     | '/u/$id'
+    | '/ambassador'
     | '/events'
     | '/market'
   id:
@@ -334,6 +346,7 @@ export interface FileRouteTypes {
     | '/_authenticated/school/$schoolId'
     | '/_authenticated/tag/$tag'
     | '/_authenticated/u/$id'
+    | '/_authenticated/ambassador/'
     | '/_authenticated/events/'
     | '/_authenticated/market/'
   fileRoutesById: FileRoutesById
@@ -458,6 +471,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEventsIndexRouteImport
       parentRoute: typeof AuthenticatedEventsRoute
     }
+    '/_authenticated/ambassador/': {
+      id: '/_authenticated/ambassador/'
+      path: '/ambassador'
+      fullPath: '/ambassador/'
+      preLoaderRoute: typeof AuthenticatedAmbassadorIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/u/$id': {
       id: '/_authenticated/u/$id'
       path: '/u/$id'
@@ -577,6 +597,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSchoolSchoolIdRoute: typeof AuthenticatedSchoolSchoolIdRoute
   AuthenticatedTagTagRoute: typeof AuthenticatedTagTagRoute
   AuthenticatedUIdRoute: typeof AuthenticatedUIdRoute
+  AuthenticatedAmbassadorIndexRoute: typeof AuthenticatedAmbassadorIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -599,6 +620,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSchoolSchoolIdRoute: AuthenticatedSchoolSchoolIdRoute,
   AuthenticatedTagTagRoute: AuthenticatedTagTagRoute,
   AuthenticatedUIdRoute: AuthenticatedUIdRoute,
+  AuthenticatedAmbassadorIndexRoute: AuthenticatedAmbassadorIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
