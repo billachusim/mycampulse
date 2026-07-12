@@ -456,7 +456,7 @@ export const overseerListLedger = createServerFn({ method: "GET" })
       .limit(PAGE);
     if (data.cursor) q = q.lt("created_at", data.cursor);
     if (data.userId) q = q.eq("user_id", data.userId);
-    if (data.reason) q = q.eq("reason", data.reason);
+    if (data.reason) q = q.eq("reason", data.reason as never);
     const { data: rows, error } = await q;
     if (error) throw error;
     return rows ?? [];
