@@ -302,6 +302,7 @@ export const adminReviewApplication = createServerFn({ method: "POST" })
       tier: data.tier ?? "ambassador",
       scope_type: app.scope_type,
       scope_id: app.scope_id,
+      school_id: app.school_id,
       region: app.region,
       status: "active",
       approved_by: context.userId,
@@ -310,6 +311,16 @@ export const adminReviewApplication = createServerFn({ method: "POST" })
       suspend_reason: null,
     }, { onConflict: "user_id" });
     if (ambErr) throw new Error(ambErr.message);
+
+    const { error: appUpErr } = await supabaseAdmin.from("ambassador_applications").update({
+      status: "approved", reviewer_id: context.userId, review_notes: data.notes ?? null,
+    }).eq("id", app.id);
+    if (appUpErr) throw new Error(appUpErr.message);
+
+    // Welcome bonus
+    await award(app.user_id, "ambassador_bonus", 500, "ambassador", app.user_id, { event: "approved" });
+    return { ok: true };
+  });
 
     const { error: appUpErr } = await supabaseAdmin.from("ambassador_applications").update({
       status: "approved", reviewer_id: context.userId, review_notes: data.notes ?? null,
