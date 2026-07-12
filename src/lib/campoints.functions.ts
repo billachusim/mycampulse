@@ -144,22 +144,49 @@ export const applyReferralCode = createServerFn({ method: "POST" })
     const userId = context.userId;
     const code = data.code.toUpperCase();
 
-    const { data: me } = await supabaseAdmin.from("profiles").select("referred_by").eq("id", userId).maybeSingle();
+    const { data: me } = await supabaseAdmin.from("profiles").select("referred_by, primary_school_id").eq("id", userId).maybeSingle();
     if (me?.referred_by) return { ok: false, reason: "already" };
 
-    const { data: referrer } = await supabaseAdmin
-      .from("profiles")
-      .select("id")
-      .eq("referral_code", code)
-      .maybeSingle();
-    if (!referrer) return { ok: false, reason: "not_found" };
-    if (referrer.id === userId) return { ok: false, reason: "self" };
+    // 1) Personal referral code
+    let referrerId: string | null = null;
+    let campaignId: string | null = null;
+    const { data: personal } = await supabaseAdmin
+      .from("profiles").select("id").eq("referral_code", code).maybeSingle();
+    if (personal) {
+      referrerId = personal.id;
+    } else {
+      // 2) Ambassador campaign code
+      const { data: campaign } = await supabaseAdmin
+        .from("ambassador_campaigns").select("id, ambassador_id, active").eq("code", code).maybeSingle();
+      if (!campaign || !campaign.active) return { ok: false, reason: "not_found" };
+      referrerId = campaign.ambassador_id;
+      campaignId = campaign.id;
+    }
+    if (!referrerId) return { ok: false, reason: "not_found" };
+    if (referrerId === userId) return { ok: false, reason: "self" };
 
-    const { error } = await supabaseAdmin.from("profiles").update({ referred_by: referrer.id }).eq("id", userId);
+    const { error } = await supabaseAdmin.from("profiles").update({ referred_by: referrerId }).eq("id", userId);
     if (error) throw new Error(error.message);
 
-    // Referrer earns when this user first posts (trigger handles it). Also immediate qualification reward:
-    await award(referrer.id, "referral_qualified", 200, "profile", userId);
+    // Attribution log (one per user)
+    await supabaseAdmin.from("signup_attributions").upsert({
+      user_id: userId,
+      referrer_id: referrerId,
+      campaign_id: campaignId,
+      campaign_code: code,
+      school_id: me?.primary_school_id ?? null,
+      source: campaignId ? "campaign" : "personal",
+    }, { onConflict: "user_id" });
+
+    // Base referral qualification reward
+    await award(referrerId, "referral_qualified", 200, "profile", userId);
+    // Ambassadors earn a bonus on top when the referral came via their campaign
+    if (campaignId) {
+      const { data: amb } = await supabaseAdmin.from("ambassadors").select("status").eq("user_id", referrerId).maybeSingle();
+      if (amb?.status === "active") {
+        await award(referrerId, "ambassador_bonus", 100, "campaign", campaignId, { referred_user: userId });
+      }
+    }
     return { ok: true };
   });
 
