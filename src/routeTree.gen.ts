@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedOverseerRouteImport } from './routes/_authenticated/overseer'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
 import { Route as AuthenticatedMarketRouteImport } from './routes/_authenticated/market'
@@ -60,6 +61,11 @@ const AuthenticatedWalletRoute = AuthenticatedWalletRouteImport.update({
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedOverseerRoute = AuthenticatedOverseerRouteImport.update({
+  id: '/overseer',
+  path: '/overseer',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
@@ -200,6 +206,7 @@ export interface FileRoutesByFullPath {
   '/market': typeof AuthenticatedMarketRouteWithChildren
   '/messages': typeof AuthenticatedMessagesRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/overseer': typeof AuthenticatedOverseerRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/ambassador/apply': typeof AuthenticatedAmbassadorApplyRoute
@@ -227,6 +234,7 @@ export interface FileRoutesByTo {
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/overseer': typeof AuthenticatedOverseerRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/ambassador/apply': typeof AuthenticatedAmbassadorApplyRoute
@@ -258,6 +266,7 @@ export interface FileRoutesById {
   '/_authenticated/market': typeof AuthenticatedMarketRouteWithChildren
   '/_authenticated/messages': typeof AuthenticatedMessagesRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
+  '/_authenticated/overseer': typeof AuthenticatedOverseerRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/ambassador/apply': typeof AuthenticatedAmbassadorApplyRoute
@@ -289,6 +298,7 @@ export interface FileRouteTypes {
     | '/market'
     | '/messages'
     | '/onboarding'
+    | '/overseer'
     | '/settings'
     | '/wallet'
     | '/ambassador/apply'
@@ -316,6 +326,7 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/messages'
     | '/onboarding'
+    | '/overseer'
     | '/settings'
     | '/wallet'
     | '/ambassador/apply'
@@ -346,6 +357,7 @@ export interface FileRouteTypes {
     | '/_authenticated/market'
     | '/_authenticated/messages'
     | '/_authenticated/onboarding'
+    | '/_authenticated/overseer'
     | '/_authenticated/settings'
     | '/_authenticated/wallet'
     | '/_authenticated/ambassador/apply'
@@ -405,6 +417,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/overseer': {
+      id: '/_authenticated/overseer'
+      path: '/overseer'
+      fullPath: '/overseer'
+      preLoaderRoute: typeof AuthenticatedOverseerRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/onboarding': {
@@ -607,6 +626,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMarketRoute: typeof AuthenticatedMarketRouteWithChildren
   AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
+  AuthenticatedOverseerRoute: typeof AuthenticatedOverseerRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
   AuthenticatedAmbassadorApplyRoute: typeof AuthenticatedAmbassadorApplyRoute
@@ -631,6 +651,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMarketRoute: AuthenticatedMarketRouteWithChildren,
   AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
+  AuthenticatedOverseerRoute: AuthenticatedOverseerRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedWalletRoute: AuthenticatedWalletRoute,
   AuthenticatedAmbassadorApplyRoute: AuthenticatedAmbassadorApplyRoute,

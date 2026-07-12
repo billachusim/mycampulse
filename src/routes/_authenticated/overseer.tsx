@@ -143,41 +143,8 @@ function Empty({ label }: { label: string }) {
   return <p className="py-6 text-center text-xs text-muted-foreground">{label}</p>;
 }
 
-function useCursorList<T extends { created_at: string }>(
-  key: unknown[],
-  fetcher: (input: { cursor?: string | null }) => Promise<T[]>,
-  extra: Record<string, unknown> = {},
-) {
-  const [pages, setPages] = useState<T[][]>([]);
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [initial, setInitial] = useState(true);
-
-  const load = async (reset = false) => {
-    setLoading(true);
-    try {
-      const rows = await fetcher({ cursor: reset ? null : cursor, ...extra });
-      if (reset) {
-        setPages([rows]);
-      } else {
-        setPages((p) => [...p, rows]);
-      }
-      const last = rows[rows.length - 1];
-      setCursor(last ? last.created_at : null);
-      setInitial(false);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useState(() => {
-    void load(true);
-  });
-
-  const all = pages.flat();
-  const canLoadMore = pages.length > 0 && pages[pages.length - 1].length >= 10;
-  return { rows: all, loading, initial, canLoadMore, loadMore: () => load(false), reload: () => load(true), key };
+function useCursorQuery<T>(key: unknown[], fetcher: () => Promise<T[]>) {
+  return useQuery({ queryKey: key, queryFn: fetcher, staleTime: 30_000 });
 }
 
 // ---------- Pulse ----------
