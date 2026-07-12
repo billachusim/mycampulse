@@ -14,6 +14,308 @@ export type Database = {
   }
   public: {
     Tables: {
+      ambassador_announcements: {
+        Row: {
+          audience: string
+          audience_filter: Json
+          author_id: string | null
+          body: string
+          created_at: string
+          id: string
+          published_at: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          audience?: string
+          audience_filter?: Json
+          author_id?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          published_at?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          audience?: string
+          audience_filter?: Json
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          published_at?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ambassador_applications: {
+        Row: {
+          created_at: string
+          id: string
+          motivation: string
+          region: string | null
+          review_notes: string | null
+          reviewer_id: string | null
+          scope_id: string | null
+          scope_type: Database["public"]["Enums"]["ambassador_scope_type"]
+          socials: Json
+          status: Database["public"]["Enums"]["ambassador_app_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          motivation: string
+          region?: string | null
+          review_notes?: string | null
+          reviewer_id?: string | null
+          scope_id?: string | null
+          scope_type?: Database["public"]["Enums"]["ambassador_scope_type"]
+          socials?: Json
+          status?: Database["public"]["Enums"]["ambassador_app_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          motivation?: string
+          region?: string | null
+          review_notes?: string | null
+          reviewer_id?: string | null
+          scope_id?: string | null
+          scope_type?: Database["public"]["Enums"]["ambassador_scope_type"]
+          socials?: Json
+          status?: Database["public"]["Enums"]["ambassador_app_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ambassador_assets: {
+        Row: {
+          body: string | null
+          created_at: string
+          created_by: string | null
+          external_url: string | null
+          id: string
+          kind: string
+          storage_path: string | null
+          tier_min: Database["public"]["Enums"]["ambassador_tier"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          created_by?: string | null
+          external_url?: string | null
+          id?: string
+          kind: string
+          storage_path?: string | null
+          tier_min?: Database["public"]["Enums"]["ambassador_tier"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          created_by?: string | null
+          external_url?: string | null
+          id?: string
+          kind?: string
+          storage_path?: string | null
+          tier_min?: Database["public"]["Enums"]["ambassador_tier"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ambassador_campaigns: {
+        Row: {
+          active: boolean
+          ambassador_id: string
+          code: string
+          created_at: string
+          id: string
+          landing_path: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          ambassador_id: string
+          code: string
+          created_at?: string
+          id?: string
+          landing_path?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          ambassador_id?: string
+          code?: string
+          created_at?: string
+          id?: string
+          landing_path?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ambassador_campaigns_ambassador_id_fkey"
+            columns: ["ambassador_id"]
+            isOneToOne: false
+            referencedRelation: "ambassadors"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      ambassador_task_completions: {
+        Row: {
+          ambassador_id: string
+          created_at: string
+          evidence_url: string | null
+          id: string
+          notes: string | null
+          reviewed_at: string | null
+          reviewer_id: string | null
+          status: Database["public"]["Enums"]["ambassador_task_status"]
+          task_id: string
+          updated_at: string
+        }
+        Insert: {
+          ambassador_id: string
+          created_at?: string
+          evidence_url?: string | null
+          id?: string
+          notes?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          status?: Database["public"]["Enums"]["ambassador_task_status"]
+          task_id: string
+          updated_at?: string
+        }
+        Update: {
+          ambassador_id?: string
+          created_at?: string
+          evidence_url?: string | null
+          id?: string
+          notes?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          status?: Database["public"]["Enums"]["ambassador_task_status"]
+          task_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ambassador_task_completions_ambassador_id_fkey"
+            columns: ["ambassador_id"]
+            isOneToOne: false
+            referencedRelation: "ambassadors"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "ambassador_task_completions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "ambassador_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ambassador_tasks: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          description: string
+          ends_at: string | null
+          id: string
+          reward_points: number
+          scope: Json
+          starts_at: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          description: string
+          ends_at?: string | null
+          id?: string
+          reward_points?: number
+          scope?: Json
+          starts_at?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          ends_at?: string | null
+          id?: string
+          reward_points?: number
+          scope?: Json
+          starts_at?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ambassadors: {
+        Row: {
+          approved_at: string
+          approved_by: string | null
+          created_at: string
+          region: string | null
+          scope_id: string | null
+          scope_type: Database["public"]["Enums"]["ambassador_scope_type"]
+          status: Database["public"]["Enums"]["ambassador_status"]
+          suspend_reason: string | null
+          suspended_at: string | null
+          tier: Database["public"]["Enums"]["ambassador_tier"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          approved_at?: string
+          approved_by?: string | null
+          created_at?: string
+          region?: string | null
+          scope_id?: string | null
+          scope_type: Database["public"]["Enums"]["ambassador_scope_type"]
+          status?: Database["public"]["Enums"]["ambassador_status"]
+          suspend_reason?: string | null
+          suspended_at?: string | null
+          tier?: Database["public"]["Enums"]["ambassador_tier"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          approved_at?: string
+          approved_by?: string | null
+          created_at?: string
+          region?: string | null
+          scope_id?: string | null
+          scope_type?: Database["public"]["Enums"]["ambassador_scope_type"]
+          status?: Database["public"]["Enums"]["ambassador_status"]
+          suspend_reason?: string | null
+          suspended_at?: string | null
+          tier?: Database["public"]["Enums"]["ambassador_tier"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       campoints_balances: {
         Row: {
           balance: number
@@ -914,6 +1216,54 @@ export type Database = {
           },
         ]
       }
+      signup_attributions: {
+        Row: {
+          campaign_code: string | null
+          campaign_id: string | null
+          created_at: string
+          id: string
+          referrer_id: string | null
+          school_id: string | null
+          source: string | null
+          user_id: string
+        }
+        Insert: {
+          campaign_code?: string | null
+          campaign_id?: string | null
+          created_at?: string
+          id?: string
+          referrer_id?: string | null
+          school_id?: string | null
+          source?: string | null
+          user_id: string
+        }
+        Update: {
+          campaign_code?: string | null
+          campaign_id?: string | null
+          created_at?: string
+          id?: string
+          referrer_id?: string | null
+          school_id?: string | null
+          source?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signup_attributions_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "ambassador_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "signup_attributions_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -956,8 +1306,19 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_active_ambassador: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
+      ambassador_app_status: "pending" | "approved" | "rejected" | "withdrawn"
+      ambassador_scope_type:
+        | "school"
+        | "faculty"
+        | "department"
+        | "hostel"
+        | "region"
+      ambassador_status: "active" | "suspended"
+      ambassador_task_status: "submitted" | "approved" | "rejected"
+      ambassador_tier: "ambassador" | "senior" | "regional_lead"
       app_role: "admin" | "moderator" | "user"
       campoint_reason:
         | "daily_checkin"
@@ -976,6 +1337,8 @@ export type Database = {
         | "admin_adjust"
         | "event_created"
         | "listing_created"
+        | "ambassador_task_reward"
+        | "ambassador_bonus"
       community_kind:
         | "faculty"
         | "department"
@@ -1117,6 +1480,17 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      ambassador_app_status: ["pending", "approved", "rejected", "withdrawn"],
+      ambassador_scope_type: [
+        "school",
+        "faculty",
+        "department",
+        "hostel",
+        "region",
+      ],
+      ambassador_status: ["active", "suspended"],
+      ambassador_task_status: ["submitted", "approved", "rejected"],
+      ambassador_tier: ["ambassador", "senior", "regional_lead"],
       app_role: ["admin", "moderator", "user"],
       campoint_reason: [
         "daily_checkin",
@@ -1135,6 +1509,8 @@ export const Constants = {
         "admin_adjust",
         "event_created",
         "listing_created",
+        "ambassador_task_reward",
+        "ambassador_bonus",
       ],
       community_kind: [
         "faculty",
