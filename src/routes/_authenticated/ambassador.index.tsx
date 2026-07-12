@@ -131,115 +131,139 @@ function AmbassadorDashboard() {
           <Metric icon={<Award className="h-4 w-4" />} label="National rank" value={d?.metrics.nationalRank ? `#${d.metrics.nationalRank}` : "—"} />
         </div>
 
-        {/* Campaigns */}
-        <section className="rounded-2xl border border-border/60 bg-card p-5">
-          <div className="flex items-center justify-between">
-            <h2 className="font-display text-2xl">Campaign codes</h2>
-            <span className="text-xs text-muted-foreground">{d?.campaigns.length ?? 0} active</span>
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">Share your codes on flyers, in classes, and across your socials. Every sign-up counts toward your ranking.</p>
+        {(() => {
+          const isCampusAmbassador = amb?.scope_type === "school" && amb?.tier === "ambassador";
+          return (
+            <Tabs defaultValue="growth">
+              <TabsList className="flex flex-wrap">
+                <TabsTrigger value="growth">Growth</TabsTrigger>
+                <TabsTrigger value="tasks">Tasks</TabsTrigger>
+                <TabsTrigger value="news">News & assets</TabsTrigger>
+                {isCampusAmbassador && <TabsTrigger value="team">Team</TabsTrigger>}
+              </TabsList>
 
-          <form
-            onSubmit={(e) => { e.preventDefault(); createCampaignM.mutate(); }}
-            className="mt-4 grid gap-2 sm:grid-cols-[1fr_140px_auto]"
-          >
-            <Input placeholder="Campaign name (e.g. Freshers Week)" value={campaignName} onChange={(e) => setCampaignName(e.target.value)} required />
-            <Input placeholder="CODE" value={campaignCode} onChange={(e) => setCampaignCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))} maxLength={16} className="font-mono tracking-widest" required />
-            <Button type="submit" disabled={createCampaignM.isPending}><Plus className="mr-1.5 h-4 w-4" /> Create</Button>
-          </form>
-
-          <div className="mt-4 space-y-2">
-            {d?.campaigns.length === 0 && <p className="text-sm text-muted-foreground">No campaigns yet — create your first one above.</p>}
-            {d?.campaigns.map((c) => (
-              <div key={c.id} className="flex flex-wrap items-center gap-2 rounded-md border border-border/60 bg-background px-3 py-2 text-sm">
-                <code className="rounded bg-secondary px-2 py-1 font-mono tracking-widest">{c.code}</code>
-                <span className="min-w-0 flex-1 truncate">{c.name}</span>
-                <Button size="sm" variant="secondary" onClick={() => copyLink(c.code)}><Copy className="mr-1 h-3.5 w-3.5" /> Copy link</Button>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Tasks */}
-        <section className="rounded-2xl border border-border/60 bg-card p-5">
-          <h2 className="font-display text-2xl">Ambassador tasks</h2>
-          <p className="mt-1 text-xs text-muted-foreground">Complete tasks to earn extra Campoints and unlock promotions.</p>
-          <div className="mt-3 space-y-3">
-            {d?.tasks.length === 0 && <p className="text-sm text-muted-foreground">No open tasks right now — check back soon.</p>}
-            {d?.tasks.map((t) => {
-              const completion = d.completions.find(c => c.task_id === t.id);
-              return (
-                <div key={t.id} className="rounded-xl border border-border/60 bg-background p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="font-medium">{t.title}</p>
-                      <p className="mt-1 text-sm text-muted-foreground">{t.description}</p>
-                    </div>
-                    <span className="whitespace-nowrap rounded-full bg-primary/15 px-2 py-0.5 text-xs text-primary">+{formatPoints(t.reward_points)}</span>
+              <TabsContent value="growth" className="space-y-6">
+                {/* Campaigns */}
+                <section className="rounded-2xl border border-border/60 bg-card p-5">
+                  <div className="flex items-center justify-between">
+                    <h2 className="font-display text-2xl">Campaign codes</h2>
+                    <span className="text-xs text-muted-foreground">{d?.campaigns.length ?? 0} active</span>
                   </div>
-                  {completion ? (
-                    <p className="mt-3 text-xs uppercase tracking-wide text-muted-foreground">Status: {completion.status}</p>
-                  ) : (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <Input
-                        placeholder="Evidence URL (photo, tweet, receipt)"
-                        value={taskEvidence[t.id] ?? ""}
-                        onChange={(e) => setTaskEvidence(v => ({ ...v, [t.id]: e.target.value }))}
-                        className="flex-1 min-w-[200px]"
-                      />
-                      <Button size="sm" onClick={() => submitTaskM.mutate({ taskId: t.id })} disabled={submitTaskM.isPending}>
-                        <Send className="mr-1 h-3.5 w-3.5" /> Submit
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </section>
+                  <p className="mt-1 text-xs text-muted-foreground">Share your codes on flyers, in classes, and across your socials. Every sign-up counts toward your ranking.</p>
 
-        {/* Announcements */}
-        <section className="rounded-2xl border border-border/60 bg-card p-5">
-          <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-primary"><Megaphone className="h-4 w-4" /> Announcements</div>
-          <div className="mt-3 space-y-3">
-            {d?.announcements.length === 0 && <p className="text-sm text-muted-foreground">No announcements yet.</p>}
-            {d?.announcements.map((a) => (
-              <article key={a.id} className="rounded-xl border border-border/60 bg-background p-4">
-                <h3 className="font-medium">{a.title}</h3>
-                <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{a.body}</p>
-                <p className="mt-2 text-xs text-muted-foreground">{timeAgo(a.published_at)}</p>
-              </article>
-            ))}
-          </div>
-        </section>
+                  <form
+                    onSubmit={(e) => { e.preventDefault(); createCampaignM.mutate(); }}
+                    className="mt-4 grid gap-2 sm:grid-cols-[1fr_140px_auto]"
+                  >
+                    <Input placeholder="Campaign name (e.g. Freshers Week)" value={campaignName} onChange={(e) => setCampaignName(e.target.value)} required />
+                    <Input placeholder="CODE" value={campaignCode} onChange={(e) => setCampaignCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))} maxLength={16} className="font-mono tracking-widest" required />
+                    <Button type="submit" disabled={createCampaignM.isPending}><Plus className="mr-1.5 h-4 w-4" /> Create</Button>
+                  </form>
 
-        {/* Marketing assets */}
-        <section className="rounded-2xl border border-border/60 bg-card p-5">
-          <h2 className="font-display text-2xl">Marketing assets</h2>
-          <p className="mt-1 text-xs text-muted-foreground">Ready-to-share visuals, copy, and PDFs for your campus.</p>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            {d?.assets.length === 0 && <p className="text-sm text-muted-foreground">Assets will appear here once the team uploads them.</p>}
-            {d?.assets.map((a) => (
-              <a
-                key={a.id}
-                href={a.external_url ?? "#"}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center justify-between gap-2 rounded-xl border border-border/60 bg-background p-3 text-sm hover:bg-secondary/50"
-              >
-                <div className="min-w-0">
-                  <p className="truncate font-medium">{a.title}</p>
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">{a.kind}</p>
-                </div>
-                <Download className="h-4 w-4 text-muted-foreground" />
-              </a>
-            ))}
-          </div>
-        </section>
+                  <div className="mt-4 space-y-2">
+                    {d?.campaigns.length === 0 && <p className="text-sm text-muted-foreground">No campaigns yet — create your first one above.</p>}
+                    {d?.campaigns.map((c) => (
+                      <div key={c.id} className="flex flex-wrap items-center gap-2 rounded-md border border-border/60 bg-background px-3 py-2 text-sm">
+                        <code className="rounded bg-secondary px-2 py-1 font-mono tracking-widest">{c.code}</code>
+                        <span className="min-w-0 flex-1 truncate">{c.name}</span>
+                        <Button size="sm" variant="secondary" onClick={() => copyLink(c.code)}><Copy className="mr-1 h-3.5 w-3.5" /> Copy link</Button>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              </TabsContent>
+
+              <TabsContent value="tasks" className="space-y-6">
+                <section className="rounded-2xl border border-border/60 bg-card p-5">
+                  <h2 className="font-display text-2xl">Ambassador tasks</h2>
+                  <p className="mt-1 text-xs text-muted-foreground">Complete tasks to earn extra Campoints and unlock promotions.</p>
+                  <div className="mt-3 space-y-3">
+                    {d?.tasks.length === 0 && <p className="text-sm text-muted-foreground">No open tasks right now — check back soon.</p>}
+                    {d?.tasks.map((t) => {
+                      const completion = d.completions.find(c => c.task_id === t.id);
+                      return (
+                        <div key={t.id} className="rounded-xl border border-border/60 bg-background p-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="font-medium">{t.title}</p>
+                              <p className="mt-1 text-sm text-muted-foreground">{t.description}</p>
+                            </div>
+                            <span className="whitespace-nowrap rounded-full bg-primary/15 px-2 py-0.5 text-xs text-primary">+{formatPoints(t.reward_points)}</span>
+                          </div>
+                          {completion ? (
+                            <p className="mt-3 text-xs uppercase tracking-wide text-muted-foreground">Status: {completion.status}</p>
+                          ) : (
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              <Input
+                                placeholder="Evidence URL (photo, tweet, receipt)"
+                                value={taskEvidence[t.id] ?? ""}
+                                onChange={(e) => setTaskEvidence(v => ({ ...v, [t.id]: e.target.value }))}
+                                className="flex-1 min-w-[200px]"
+                              />
+                              <Button size="sm" onClick={() => submitTaskM.mutate({ taskId: t.id })} disabled={submitTaskM.isPending}>
+                                <Send className="mr-1 h-3.5 w-3.5" /> Submit
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              </TabsContent>
+
+              <TabsContent value="news" className="space-y-6">
+                <section className="rounded-2xl border border-border/60 bg-card p-5">
+                  <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-primary"><Megaphone className="h-4 w-4" /> Announcements</div>
+                  <div className="mt-3 space-y-3">
+                    {d?.announcements.length === 0 && <p className="text-sm text-muted-foreground">No announcements yet.</p>}
+                    {d?.announcements.map((a) => (
+                      <article key={a.id} className="rounded-xl border border-border/60 bg-background p-4">
+                        <h3 className="font-medium">{a.title}</h3>
+                        <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{a.body}</p>
+                        <p className="mt-2 text-xs text-muted-foreground">{timeAgo(a.published_at)}</p>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+
+                <section className="rounded-2xl border border-border/60 bg-card p-5">
+                  <h2 className="font-display text-2xl">Marketing assets</h2>
+                  <p className="mt-1 text-xs text-muted-foreground">Ready-to-share visuals, copy, and PDFs for your campus.</p>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    {d?.assets.length === 0 && <p className="text-sm text-muted-foreground">Assets will appear here once the team uploads them.</p>}
+                    {d?.assets.map((a) => (
+                      <a
+                        key={a.id}
+                        href={a.external_url ?? "#"}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center justify-between gap-2 rounded-xl border border-border/60 bg-background p-3 text-sm hover:bg-secondary/50"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate font-medium">{a.title}</p>
+                          <p className="text-xs uppercase tracking-wide text-muted-foreground">{a.kind}</p>
+                        </div>
+                        <Download className="h-4 w-4 text-muted-foreground" />
+                      </a>
+                    ))}
+                  </div>
+                </section>
+              </TabsContent>
+
+              {isCampusAmbassador && (
+                <TabsContent value="team" className="space-y-6">
+                  <TeamPanel />
+                </TabsContent>
+              )}
+            </Tabs>
+          );
+        })()}
       </div>
     </AppShell>
   );
 }
+
 
 function Metric({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) {
   return (
