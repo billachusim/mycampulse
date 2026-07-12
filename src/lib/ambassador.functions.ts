@@ -49,13 +49,24 @@ export const applyForAmbassador = createServerFn({ method: "POST" })
     const { data: existingAmb } = await supabase.from("ambassadors").select("user_id, status").eq("user_id", userId).maybeSingle();
     if (existingAmb && existingAmb.status === "active") return { ok: false, reason: "already_ambassador" };
 
-    // If scope_id missing for a school scope, default to user's primary_school_id
+    // Resolve scope_id and derive school_id
     let scopeId = data.scope_id ?? null;
-    if (data.scope_type === "school" && !scopeId) {
-      const { data: profile } = await supabase.from("profiles").select("primary_school_id").eq("id", userId).maybeSingle();
-      scopeId = profile?.primary_school_id ?? null;
-    }
+    const { data: profile } = await supabase.from("profiles").select("primary_school_id").eq("id", userId).maybeSingle();
+    if (data.scope_type === "school" && !scopeId) scopeId = profile?.primary_school_id ?? null;
     if (!scopeId && data.scope_type !== "hostel") return { ok: false, reason: "scope_required" };
+
+    // school_id: for school scope it's the scope itself; for sub-scopes we resolve via helper
+    let schoolId: string | null = null;
+    if (data.scope_type === "school") {
+      schoolId = scopeId;
+    } else if (data.scope_type === "hostel") {
+      schoolId = profile?.primary_school_id ?? null;
+    } else if (scopeId) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: sid } = await supabaseAdmin.rpc("resolve_school_id", { _scope_type: data.scope_type, _scope_id: scopeId });
+      schoolId = (sid as string | null) ?? null;
+    }
+    if (data.scope_type !== "school" && !schoolId) return { ok: false, reason: "scope_required" };
 
     const { error } = await supabase.from("ambassador_applications").insert({
       user_id: userId,
@@ -63,6 +74,7 @@ export const applyForAmbassador = createServerFn({ method: "POST" })
       socials: data.socials ?? {},
       scope_type: data.scope_type,
       scope_id: scopeId,
+      school_id: schoolId,
       region: data.region ?? null,
     });
     if (error) {
