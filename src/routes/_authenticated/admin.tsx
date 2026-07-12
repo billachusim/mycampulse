@@ -1,12 +1,24 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { timeAgo } from "@/lib/profile";
 import { formatPoints } from "@/lib/campoints";
+import {
+  adminCreateTask,
+  adminListAmbassadors,
+  adminListApplications,
+  adminPublishAnnouncement,
+  adminReviewApplication,
+  adminSetAmbassadorStatus,
+  adminSetAmbassadorTier,
+} from "@/lib/ambassador.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   beforeLoad: async () => {
@@ -18,7 +30,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-type Tab = "reports" | "redemptions" | "events" | "listings";
+type Tab = "reports" | "redemptions" | "events" | "listings" | "ambassadors";
 
 function AdminPage() {
   const queryClient = useQueryClient();
