@@ -175,6 +175,62 @@ function AdminPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  // Ambassadors
+  const fetchApps = useServerFn(adminListApplications);
+  const fetchAmbs = useServerFn(adminListAmbassadors);
+  const reviewApp = useServerFn(adminReviewApplication);
+  const setTier = useServerFn(adminSetAmbassadorTier);
+  const setStatus = useServerFn(adminSetAmbassadorStatus);
+  const publish = useServerFn(adminPublishAnnouncement);
+  const createTask = useServerFn(adminCreateTask);
+
+  const applications = useQuery({
+    queryKey: ["admin-ambassador-apps"],
+    enabled: tab === "ambassadors",
+    queryFn: () => fetchApps(),
+  });
+  const ambassadors = useQuery({
+    queryKey: ["admin-ambassadors"],
+    enabled: tab === "ambassadors",
+    queryFn: () => fetchAmbs(),
+  });
+
+  const [annTitle, setAnnTitle] = useState("");
+  const [annBody, setAnnBody] = useState("");
+  const [taskTitle, setTaskTitle] = useState("");
+  const [taskDesc, setTaskDesc] = useState("");
+  const [taskReward, setTaskReward] = useState(200);
+
+  const doReview = useMutation({
+    mutationFn: async (v: { applicationId: string; decision: "approve" | "reject" }) => reviewApp({ data: v }),
+    onSuccess: () => {
+      toast.success("Application reviewed.");
+      queryClient.invalidateQueries({ queryKey: ["admin-ambassador-apps"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-ambassadors"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const doTier = useMutation({
+    mutationFn: async (v: { userId: string; tier: "ambassador" | "senior" | "regional_lead" }) => setTier({ data: v }),
+    onSuccess: () => { toast.success("Tier updated."); queryClient.invalidateQueries({ queryKey: ["admin-ambassadors"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const doStatus = useMutation({
+    mutationFn: async (v: { userId: string; status: "active" | "suspended"; reason?: string }) => setStatus({ data: v }),
+    onSuccess: () => { toast.success("Status updated."); queryClient.invalidateQueries({ queryKey: ["admin-ambassadors"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const doPublish = useMutation({
+    mutationFn: async () => publish({ data: { title: annTitle, body: annBody } }),
+    onSuccess: () => { toast.success("Announcement published."); setAnnTitle(""); setAnnBody(""); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const doCreateTask = useMutation({
+    mutationFn: async () => createTask({ data: { title: taskTitle, description: taskDesc, reward_points: taskReward } }),
+    onSuccess: () => { toast.success("Task created."); setTaskTitle(""); setTaskDesc(""); setTaskReward(200); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   return (
     <AppShell>
       <h1 className="mb-2 font-display text-3xl">Admin</h1>
@@ -184,6 +240,7 @@ function AdminPage() {
           ["events", `Events${allEvents.data ? ` · ${allEvents.data.length}` : ""}`],
           ["listings", `Listings${allListings.data ? ` · ${allListings.data.length}` : ""}`],
           ["redemptions", `Cash-outs${redemptions.data ? ` · ${redemptions.data.length}` : ""}`],
+          ["ambassadors", `Ambassadors${applications.data ? ` · ${applications.data.length}` : ""}`],
         ] as [Tab, string][]).map(([key, label]) => (
           <button
             key={key}
@@ -194,6 +251,7 @@ function AdminPage() {
           </button>
         ))}
       </div>
+
 
       {tab === "reports" && (
         <div className="space-y-3">
