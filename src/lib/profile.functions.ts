@@ -12,7 +12,11 @@ export const updateMyProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => schema.parse(data))
   .handler(async ({ data, context }) => {
-    const patch: Record<string, unknown> = {
+    const patch: {
+      display_name: string;
+      bio: string | null;
+      avatar_url?: string | null;
+    } = {
       display_name: data.display_name,
       bio: data.bio ?? null,
     };
