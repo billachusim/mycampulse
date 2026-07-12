@@ -22,7 +22,7 @@ async function audit(
     action,
     target_kind: targetKind ?? null,
     target_id: targetId ?? null,
-    meta: meta ?? {},
+    meta: (meta ?? {}) as never,
   });
 }
 
