@@ -1,90 +1,73 @@
-## Goal
+## Overseer — Owner-Only Super Admin
 
-Let approved **Campus Ambassadors** (tier=`ambassador`, scope_type=`school`) invite and approve **Faculty / Department / Hostel** ambassadors under their school, without duplicating the existing application/approval architecture used for admin-approved campus ambassadors.
+A single, lean control surface reserved for **you** (the app owner). It sits alongside the existing `/admin` page (which stays scoped to routine moderation) and gives you global oversight of every domain in the app: users, posts, comments, events, listings, campaigns, ambassadors, redemptions, reports, campoints, and system health.
 
-The current schema already supports this — `ambassador_scope_type` already contains `faculty | department | hostel`, and `ambassadors` supports non-primary rows per scope. What's missing is: (1) an invitation/approval path controlled by the campus ambassador (not just admins), (2) sub-ambassador management UI on the campus ambassador dashboard, (3) RLS updates so campus ambassadors can act within their school.
+The name I'm proposing: **Overseer** (`/overseer`). Short, distinct from "admin" so it doesn't blur with the ambassador/admin flows already in place. Happy to swap it.
 
-## Design decisions
+### Guiding constraints
+- Only you can reach it. Guarded by a dedicated `owner` role (new value in `app_role`), granted to your account only via migration. Even other `admin`s can't enter. Server functions double-check with `has_role(auth.uid(), 'owner')` — never trust the client route guard alone.
+- Lean. Every list is **paginated at 10 rows** by default, keyset/offset pagination, lazy per tab (`enabled: tab === X`). No cross-joins beyond one FK hop. No realtime subscriptions here. No aggregate scans over full tables — counts use `head: true, count: 'exact'` only on filtered queries with indexes.
+- Read-first. Actions (delete post, cancel campaign, force-suspend ambassador, adjust points, resolve report, refund redemption) are one-click but confirm-gated and go through owner-only server functions.
 
-- **Reuse `ambassador_applications`.** Users still apply through the same table; only the reviewer changes. For faculty/dept/hostel scopes, a campus ambassador at the same `school` reviews it instead of an admin. Admins retain override.
-- **Introduce `ambassador_invitations`** as a lightweight table for campus ambassadors to proactively invite a specific user (by email or user_id) to a sub-scope. Accepting the invite creates a pre-approved application → ambassador row. This keeps the "apply" flow and the "invite" flow converging on the same review pipeline.
-- **Tier stays `ambassador`; sub-ambassadors are identified by `scope_type != 'school'`.** No new enum values, no new role. The one-primary-per-scope index already covers faculty/dept/hostel uniqueness.
-- **Parent linkage is derived, not stored.** A sub-ambassador's "parent" is the active campus ambassador whose `scope_type='school'` matches the sub's `school_id` (looked up via `faculties.school_id`, `departments → faculty → school`, `profiles.school_id` for hostel). This avoids denormalization drift. A helper SQL function `campus_ambassador_for(_scope_type, _scope_id)` returns that user.
-- **Rewards & campaigns unchanged.** Sub-ambassadors get their own campaign codes, tasks, and ledger events through the exact same tables. No change to `campoints_ledger` or `signup_attributions`.
+### Scope of oversight (tabs)
+Each tab is a lazy panel. Only the active tab queries data.
 
-## Database changes (single migration)
+1. **Pulse** — a single row of small counters (users today, posts today, active campaigns, pending reports, pending redemptions). Cheap `count` queries only.
+2. **Users** — search by email/display name/school. Row actions: view profile, grant/revoke role, suspend, adjust campoints (± with reason → writes to `campoints_ledger`).
+3. **Posts** — latest 10, filter by school/flagged. Actions: hide, delete, view reports on it.
+4. **Comments** — latest 10, same shape as posts.
+5. **Events** — latest 10, filter by status. Actions: cancel, feature, delete.
+6. **Listings** — latest 10 marketplace items. Actions: unlist, delete.
+7. **Ambassadors** — global view across all schools (campus + sub). Actions: force promote/demote/suspend, override applications, revoke invitations. Reuses existing `ambassador.functions.ts` behind an owner guard.
+8. **Campaigns** — all ambassador campaigns across schools. Actions: pause, end, view attributions.
+9. **Redemptions** — pending + recent. Actions: approve, reject, mark paid.
+10. **Reports** — every open report. Actions: resolve, dismiss, act on target.
+11. **Ledger** — recent `campoints_ledger` entries, filterable by reason/user. Read-only.
+12. **System** — quick links: linter status placeholder, storage bucket usage (single query), auth settings summary. No heavy scans.
 
-1. **New table `ambassador_invitations`**
-   - `id`, `inviter_id` (campus ambassador), `invitee_email`, `invitee_user_id` (nullable until claimed), `scope_type` (faculty/department/hostel), `scope_id`, `region`, `token` (unique), `status` (`pending|accepted|revoked|expired`), `expires_at`, timestamps.
-   - RLS: inviter and invitee can read; inviter can insert/revoke only for their school's sub-scopes; admin full access.
-   - GRANTs for authenticated + service_role.
+### Data model changes (single migration)
+- Extend `app_role` enum with `'owner'`.
+- Grant `'owner'` to your `auth.users.id` (looked up by your email) via the migration.
+- Add `campoints_ledger` reason `'owner_adjustment'` (new enum value on `campoint_reason`).
+- Add an **`admin_audit_log`** table: `id`, `actor_id`, `action` (text), `target_kind`, `target_id`, `meta jsonb`, `created_at`. Every Overseer mutation writes one row. RLS: only `owner` and `admin` can SELECT; only server functions (service_role via server-fn writes) INSERT.
+- RLS/policy pass: extend existing policies where needed so `has_role(auth.uid(), 'owner')` implies full access on `posts`, `comments`, `events`, `marketplace_items`, `redemptions`, `reports`, `ambassadors`, `ambassador_applications`, `ambassador_campaigns`, `ambassador_invitations`. `has_role` is already `SECURITY DEFINER` — no recursion risk.
+- Grants: `admin_audit_log` gets `GRANT SELECT ON ... TO authenticated` (RLS gates to owner/admin) + `GRANT ALL ... TO service_role`.
 
-2. **New security-definer helper `public.campus_ambassador_for(_scope_type, _scope_id) → uuid`**
-   - Resolves the school for the given sub-scope, returns the active campus ambassador's user_id.
-   - Used in RLS policies and server functions.
+### Server functions (new file `src/lib/overseer.functions.ts`)
+All use `requireSupabaseAuth` middleware + first line checks `has_role(userId, 'owner')` → throw 403 otherwise. Every mutation appends an `admin_audit_log` entry.
 
-3. **New helper `public.is_campus_ambassador_for(_user, _scope_type, _scope_id) → boolean`**
-   - Wrapper used by policies.
+- `overseerPulse()` — returns the 5 counters.
+- `overseerListUsers({ q, cursor })`, `overseerAdjustCampoints({ userId, delta, reason })`, `overseerGrantRole`, `overseerRevokeRole`, `overseerSuspendUser`.
+- `overseerListPosts({ cursor, schoolId, flagged })`, `overseerDeletePost`, `overseerHidePost`.
+- Same shape for comments, events, listings.
+- `overseerListRedemptions`, `overseerResolveRedemption({ id, status, note })`.
+- `overseerListReports`, `overseerResolveReport`.
+- `overseerListCampaigns`, `overseerPauseCampaign`, `overseerEndCampaign`.
+- `overseerListLedger({ cursor, userId, reason })`.
 
-4. **Extend RLS on `ambassador_applications`**
-   - Add policy: campus ambassador can `SELECT`/`UPDATE` applications where `scope_type IN (faculty,department,hostel)` and `is_campus_ambassador_for(auth.uid(), scope_type, scope_id)` is true. Only status transitions `pending → approved | rejected` allowed.
+Reads default to `.limit(10)` with a cursor param; no full-table scans. Only owner-only reads go through `overseer.functions.ts` — routine ambassador/admin functions stay as-is.
 
-5. **Extend RLS on `ambassadors`**
-   - Add policy: campus ambassador can `INSERT`/`UPDATE` (suspend, promote to `senior`) rows for sub-scopes under their school.
+### UI
+- New route: `src/routes/_authenticated/overseer.tsx`.
+- `beforeLoad` calls a lightweight `overseerCanEnter()` server fn (returns boolean). Non-owners get redirected to `/home`.
+- Layout: sticky left rail with the 12 tabs, main panel renders the active tab. Each tab is a small component in `src/components/overseer/`. Tabs load only when clicked (`enabled: tab === '...'`). Pagination: "Load more" button, no infinite scroll.
+- Small header shows your name + a red "OWNER" badge so it's visually obvious.
+- A tiny hidden entrypoint: a subtle link in `/admin` visible only when `owner=true`, plus direct URL access. Not exposed in the main nav.
 
-6. **Extend RLS on `ambassador_task_completions`**
-   - Campus ambassador can review completions submitted by ambassadors under their school.
+### Performance guardrails
+- All list queries use existing indexes (I'll add indexes on `posts(created_at)`, `comments(created_at)`, `campoints_ledger(reason, created_at)` if missing — checked in the migration).
+- No `select('*')`. Every query projects the minimum columns for the row card.
+- `staleTime: 30_000` on read queries; explicit refresh button per tab.
+- No cross-tab prefetching, no background polling.
 
-7. **Optional: extend `ambassador_tasks`** so campus ambassadors can create tasks scoped to their school (`created_by = auth.uid()` + `scope.school_id = their school`). Admins still create global tasks.
+### Files to add / edit
+- Add: `supabase/migrations/<ts>_overseer.sql` (role, audit table, policies, indexes, reason enum).
+- Add: `src/lib/overseer.functions.ts`.
+- Add: `src/routes/_authenticated/overseer.tsx` + `src/components/overseer/*` (one small file per tab).
+- Edit: `src/routes/_authenticated/admin.tsx` — show an "Open Overseer" link when the user has `owner` role.
+- Edit: `src/integrations/supabase/types.ts` regenerates automatically after the migration.
 
-No changes to `campoints_ledger`, `ambassador_campaigns`, `signup_attributions`, `profiles`, or `app_role`.
-
-## Server functions (extend `src/lib/ambassador.functions.ts`)
-
-- `inviteSubAmbassador({ email, scope_type, scope_id, region? })` — campus ambassador only; creates invitation with token, sends via existing email flow (or returns shareable link if email infra not wired).
-- `listMyInvitations()` / `revokeInvitation(id)`.
-- `acceptInvitation({ token })` — user-facing; if signed in, creates a pre-approved `ambassador_applications` row (status=`approved`) and an `ambassadors` row atomically; if not signed in, redirect to auth then resume.
-- `listPendingSubApplications()` — for campus ambassador dashboard.
-- `reviewSubApplication({ application_id, decision, notes })` — approve/reject; on approve, insert `ambassadors` row.
-- `listMySubAmbassadors()` — active/suspended sub-ambassadors under this campus.
-- `suspendSubAmbassador({ user_id, reason })` / `reinstateSubAmbassador({ user_id })` / `promoteSubAmbassador({ user_id, tier: 'senior' })`.
-- `reviewSubTaskCompletion({ completion_id, decision, notes })` — reuses existing award logic.
-
-All check `is_campus_ambassador_for` via RLS + explicit assertion inside handlers.
-
-## UI
-
-**`/ambassador` dashboard (existing) — add "Team" tab, visible only when the current user's row is `scope_type='school'`:**
-
-- **Invite** — form (email + scope picker: faculty/department/hostel + specific scope). Shows list of pending invitations with copy-link and revoke.
-- **Applications** — pending faculty/dept/hostel applications for the school; approve/reject inline.
-- **My sub-ambassadors** — grouped by scope_type; each row shows tier, status, campaigns count, referrals, points; actions: promote, suspend, message.
-- **Task reviews** — completions from sub-ambassadors awaiting approval.
-
-**`/ambassador/apply` (existing)** — add scope selector so faculty/dept/hostel applicants can pick their target scope. If a valid invitation token is in the URL, prefill scope + mark it as invited.
-
-**`/ambassador/invite/$token` (new lightweight route)** — accept invitation; calls `acceptInvitation` after auth.
-
-**Admin dashboard** — unchanged, but the ambassadors tab gets a filter for scope_type so admins can see the whole hierarchy.
-
-## Attribution and rewards
-
-No changes. Sub-ambassadors get personal referral codes and campaign codes through the existing paths. `signup_attributions.campaign_id` already carries the campaign, and `ambassador_bonus` fires for any active ambassador regardless of tier/scope.
-
-## Scaling notes
-
-- Sub-ambassador → campus ambassador lookup is O(1) via `school_id` join; add indexes on `faculties(school_id)`, `departments(faculty_id)` if not already present.
-- All new policies use security-definer helpers so RLS stays non-recursive.
-- Invitations table stays small (expire + prune job later; not needed for v1).
-
-## Deliverables
-
-1. One migration adding `ambassador_invitations`, two helper functions, and the extended RLS policies.
-2. Extended `src/lib/ambassador.functions.ts` with invitation + sub-review functions.
-3. New "Team" tab in `src/routes/_authenticated/ambassador.index.tsx`.
-4. New route `src/routes/_authenticated/ambassador.invite.$token.tsx`.
-5. Small edit to `ambassador.apply.tsx` for scope selection + invite prefill.
-
-## Open question (non-blocking)
-
-Should sub-ambassador **application approval** by a campus ambassador award the same 200-pt referral qualification bonus, or a smaller sub-tier bonus? Default: same reward pool as existing, no new ledger reason.
+### Open questions before I build
+1. Confirm the name **Overseer** (or pick: Command Center / Control Room / Mission Control / Sovereign).
+2. The owner email to bind the `'owner'` role to — you mentioned "you already know my email", but I don't have it in current context. Please paste it so the migration seeds correctly. Without it I'll gate the role but leave the assignment for you to run manually.
+3. Should `owner` implicitly inherit `admin` powers everywhere (so you don't need both roles), or keep them separate? Default plan: `owner` is a strict superset — `has_role(uid,'admin')` checks are extended to accept `owner` too via a small helper `has_admin_access(uid)`.

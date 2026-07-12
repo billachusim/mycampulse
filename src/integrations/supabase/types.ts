@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action: string
+          actor_id: string
+          created_at: string
+          id: string
+          meta: Json
+          target_id: string | null
+          target_kind: string | null
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          created_at?: string
+          id?: string
+          meta?: Json
+          target_id?: string | null
+          target_kind?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          created_at?: string
+          id?: string
+          meta?: Json
+          target_id?: string | null
+          target_kind?: string | null
+        }
+        Relationships: []
+      }
       ambassador_announcements: {
         Row: {
           audience: string
@@ -1383,6 +1413,7 @@ export type Database = {
         }
         Returns: number
       }
+      bootstrap_owner: { Args: { _email: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1414,7 +1445,7 @@ export type Database = {
       ambassador_status: "active" | "suspended"
       ambassador_task_status: "submitted" | "approved" | "rejected"
       ambassador_tier: "ambassador" | "senior" | "regional_lead"
-      app_role: "admin" | "moderator" | "user"
+      app_role: "admin" | "moderator" | "user" | "owner"
       campoint_reason:
         | "daily_checkin"
         | "streak_bonus"
@@ -1586,7 +1617,7 @@ export const Constants = {
       ambassador_status: ["active", "suspended"],
       ambassador_task_status: ["submitted", "approved", "rejected"],
       ambassador_tier: ["ambassador", "senior", "regional_lead"],
-      app_role: ["admin", "moderator", "user"],
+      app_role: ["admin", "moderator", "user", "owner"],
       campoint_reason: [
         "daily_checkin",
         "streak_bonus",

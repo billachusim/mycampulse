@@ -233,7 +233,10 @@ function AdminPage() {
 
   return (
     <AppShell>
-      <h1 className="mb-2 font-display text-3xl">Admin</h1>
+      <div className="mb-2 flex items-center justify-between">
+        <h1 className="font-display text-3xl">Admin</h1>
+        <OverseerLink />
+      </div>
       <div className="mb-6 flex flex-wrap gap-2 border-b border-border/60">
         {([
           ["reports", `Moderation${reports.data ? ` · ${reports.data.length}` : ""}`],
@@ -489,5 +492,24 @@ function AdminPage() {
         </div>
       )}
     </AppShell>
+  );
+}
+
+function OverseerLink() {
+  const q = useQuery({
+    queryKey: ["is-owner"],
+    queryFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return false;
+      const { data } = await supabase.from("user_roles").select("role").eq("user_id", u.user.id).eq("role", "owner").maybeSingle();
+      return !!data;
+    },
+    staleTime: 60_000,
+  });
+  if (!q.data) return null;
+  return (
+    <Link to="/overseer" className="rounded-full bg-red-600 px-3 py-1 text-xs font-semibold text-white hover:bg-red-700">
+      Overseer →
+    </Link>
   );
 }
