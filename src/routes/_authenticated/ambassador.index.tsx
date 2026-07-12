@@ -3,17 +3,29 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Award, Copy, Download, Megaphone, Target, TrendingUp, Users, Plus, Send } from "lucide-react";
+import { Award, Copy, Download, Megaphone, Target, TrendingUp, Users, Plus, Send, Mail, ShieldCheck, ShieldX, ArrowUp, Check, X } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import {
   createAmbassadorCampaign,
   getMyAmbassadorDashboard,
   getMyAmbassadorStatus,
   submitAmbassadorTask,
+  listSubApplications,
+  reviewSubApplication,
+  listSubAmbassadors,
+  setSubAmbassadorStatus,
+  setSubAmbassadorTier,
+  inviteSubAmbassador,
+  listMyInvitations,
+  revokeInvitation,
+  listSchoolScopes,
+  listSubTaskCompletions,
+  reviewSubTaskCompletion,
 } from "@/lib/ambassador.functions";
 import { formatPoints } from "@/lib/campoints";
 import { timeAgo } from "@/lib/profile";
@@ -28,6 +40,7 @@ function AmbassadorDashboard() {
   const fetchDashboard = useServerFn(getMyAmbassadorDashboard);
   const createCampaign = useServerFn(createAmbassadorCampaign);
   const submitTask = useServerFn(submitAmbassadorTask);
+
 
   const status = useQuery({ queryKey: ["ambassador-status"], queryFn: () => fetchStatus() });
   const dash = useQuery({
