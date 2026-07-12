@@ -324,8 +324,8 @@ export const overseerListAmbassadors = createServerFn({ method: "GET" })
 
 export const overseerSetAmbassadorStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { userId: string; status: "active" | "suspended" | "revoked" }) =>
-    z.object({ userId: z.string().uuid(), status: z.enum(["active", "suspended", "revoked"]) }).parse(d),
+  .inputValidator((d: { userId: string; status: "active" | "suspended" }) =>
+    z.object({ userId: z.string().uuid(), status: z.enum(["active", "suspended"]) }).parse(d),
   )
   .handler(async ({ data, context }) => {
     await assertOwner(context.userId);
