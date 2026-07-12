@@ -137,6 +137,16 @@ function ProfilePage() {
           <p className="text-sm text-muted-foreground">No posts yet.</p>
         )}
       </div>
+      {isMe && p && (
+        <EditProfileDialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          userId={id}
+          displayName={p.display_name}
+          bio={p.bio}
+          avatarUrl={p.avatar_url}
+        />
+      )}
     </AppShell>
   );
 }
