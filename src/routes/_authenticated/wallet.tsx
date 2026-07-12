@@ -139,6 +139,20 @@ function WalletPage() {
           )}
         </section>
 
+        {/* Campus Ambassador CTA */}
+        <section className="rounded-2xl border border-primary/40 bg-primary/10 p-5">
+          <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-primary">
+            <Sparkles className="h-4 w-4" /> Campus Ambassador Program
+          </div>
+          <h2 className="mt-1 font-display text-2xl">Lead your campus, earn more</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Get campaign codes, tasks, marketing assets, and bonus Campoints on every sign-up you drive.
+          </p>
+          <Link to="/ambassador" className="mt-3 inline-flex items-center gap-1 rounded-md brand-gradient px-3 py-1.5 text-sm text-primary-foreground">
+            Open ambassador hub <ChevronRight className="h-3.5 w-3.5" />
+          </Link>
+        </section>
+
         {/* Quests */}
         <section className="rounded-2xl border border-border/60 bg-card p-5">
           <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-primary"><Sparkles className="h-4 w-4" /> Quests</div>
