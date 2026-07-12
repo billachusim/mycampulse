@@ -105,6 +105,11 @@ function ProfilePage() {
               </p>
               {p.bio && <p className="mt-2 text-sm">{p.bio}</p>}
             </div>
+            {isMe && (
+              <Button variant="secondary" size="sm" onClick={() => setEditOpen(true)}>
+                Edit profile
+              </Button>
+            )}
           </div>
           {!isMe && user && (
             <div className="mt-4 flex gap-2">
