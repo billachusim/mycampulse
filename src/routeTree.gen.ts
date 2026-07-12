@@ -25,6 +25,7 @@ import { Route as AuthenticatedConnectionsRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedMarketIndexRouteImport } from './routes/_authenticated/market.index'
 import { Route as AuthenticatedEventsIndexRouteImport } from './routes/_authenticated/events.index'
+import { Route as AuthenticatedAmbassadorIndexRouteImport } from './routes/_authenticated/ambassador.index'
 import { Route as AuthenticatedUIdRouteImport } from './routes/_authenticated/u.$id'
 import { Route as AuthenticatedTagTagRouteImport } from './routes/_authenticated/tag.$tag'
 import { Route as AuthenticatedSchoolSchoolIdRouteImport } from './routes/_authenticated/school.$schoolId'
@@ -34,6 +35,7 @@ import { Route as AuthenticatedPostIdRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedMarketNewRouteImport } from './routes/_authenticated/market.new'
 import { Route as AuthenticatedEventsNewRouteImport } from './routes/_authenticated/events.new'
 import { Route as AuthenticatedCommunityIdRouteImport } from './routes/_authenticated/community.$id'
+import { Route as AuthenticatedAmbassadorApplyRouteImport } from './routes/_authenticated/ambassador.apply'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -118,6 +120,12 @@ const AuthenticatedEventsIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedEventsRoute,
   } as any)
+const AuthenticatedAmbassadorIndexRoute =
+  AuthenticatedAmbassadorIndexRouteImport.update({
+    id: '/ambassador/',
+    path: '/ambassador/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedUIdRoute = AuthenticatedUIdRouteImport.update({
   id: '/u/$id',
   path: '/u/$id',
@@ -166,6 +174,12 @@ const AuthenticatedCommunityIdRoute =
     path: '/community/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAmbassadorApplyRoute =
+  AuthenticatedAmbassadorApplyRouteImport.update({
+    id: '/ambassador/apply',
+    path: '/ambassador/apply',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -181,6 +195,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/wallet': typeof AuthenticatedWalletRoute
+  '/ambassador/apply': typeof AuthenticatedAmbassadorApplyRoute
   '/community/$id': typeof AuthenticatedCommunityIdRoute
   '/events/new': typeof AuthenticatedEventsNewRoute
   '/market/new': typeof AuthenticatedMarketNewRoute
@@ -190,6 +205,7 @@ export interface FileRoutesByFullPath {
   '/school/$schoolId': typeof AuthenticatedSchoolSchoolIdRoute
   '/tag/$tag': typeof AuthenticatedTagTagRoute
   '/u/$id': typeof AuthenticatedUIdRoute
+  '/ambassador/': typeof AuthenticatedAmbassadorIndexRoute
   '/events/': typeof AuthenticatedEventsIndexRoute
   '/market/': typeof AuthenticatedMarketIndexRoute
 }
@@ -205,6 +221,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/wallet': typeof AuthenticatedWalletRoute
+  '/ambassador/apply': typeof AuthenticatedAmbassadorApplyRoute
   '/community/$id': typeof AuthenticatedCommunityIdRoute
   '/events/new': typeof AuthenticatedEventsNewRoute
   '/market/new': typeof AuthenticatedMarketNewRoute
@@ -214,6 +231,7 @@ export interface FileRoutesByTo {
   '/school/$schoolId': typeof AuthenticatedSchoolSchoolIdRoute
   '/tag/$tag': typeof AuthenticatedTagTagRoute
   '/u/$id': typeof AuthenticatedUIdRoute
+  '/ambassador': typeof AuthenticatedAmbassadorIndexRoute
   '/events': typeof AuthenticatedEventsIndexRoute
   '/market': typeof AuthenticatedMarketIndexRoute
 }
@@ -233,6 +251,7 @@ export interface FileRoutesById {
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
+  '/_authenticated/ambassador/apply': typeof AuthenticatedAmbassadorApplyRoute
   '/_authenticated/community/$id': typeof AuthenticatedCommunityIdRoute
   '/_authenticated/events/new': typeof AuthenticatedEventsNewRoute
   '/_authenticated/market/new': typeof AuthenticatedMarketNewRoute
@@ -242,6 +261,7 @@ export interface FileRoutesById {
   '/_authenticated/school/$schoolId': typeof AuthenticatedSchoolSchoolIdRoute
   '/_authenticated/tag/$tag': typeof AuthenticatedTagTagRoute
   '/_authenticated/u/$id': typeof AuthenticatedUIdRoute
+  '/_authenticated/ambassador/': typeof AuthenticatedAmbassadorIndexRoute
   '/_authenticated/events/': typeof AuthenticatedEventsIndexRoute
   '/_authenticated/market/': typeof AuthenticatedMarketIndexRoute
 }
@@ -261,6 +281,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/settings'
     | '/wallet'
+    | '/ambassador/apply'
     | '/community/$id'
     | '/events/new'
     | '/market/new'
@@ -270,6 +291,7 @@ export interface FileRouteTypes {
     | '/school/$schoolId'
     | '/tag/$tag'
     | '/u/$id'
+    | '/ambassador/'
     | '/events/'
     | '/market/'
   fileRoutesByTo: FileRoutesByTo
@@ -285,6 +307,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/settings'
     | '/wallet'
+    | '/ambassador/apply'
     | '/community/$id'
     | '/events/new'
     | '/market/new'
@@ -294,6 +317,7 @@ export interface FileRouteTypes {
     | '/school/$schoolId'
     | '/tag/$tag'
     | '/u/$id'
+    | '/ambassador'
     | '/events'
     | '/market'
   id:
@@ -312,6 +336,7 @@ export interface FileRouteTypes {
     | '/_authenticated/onboarding'
     | '/_authenticated/settings'
     | '/_authenticated/wallet'
+    | '/_authenticated/ambassador/apply'
     | '/_authenticated/community/$id'
     | '/_authenticated/events/new'
     | '/_authenticated/market/new'
@@ -321,6 +346,7 @@ export interface FileRouteTypes {
     | '/_authenticated/school/$schoolId'
     | '/_authenticated/tag/$tag'
     | '/_authenticated/u/$id'
+    | '/_authenticated/ambassador/'
     | '/_authenticated/events/'
     | '/_authenticated/market/'
   fileRoutesById: FileRoutesById
@@ -445,6 +471,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEventsIndexRouteImport
       parentRoute: typeof AuthenticatedEventsRoute
     }
+    '/_authenticated/ambassador/': {
+      id: '/_authenticated/ambassador/'
+      path: '/ambassador'
+      fullPath: '/ambassador/'
+      preLoaderRoute: typeof AuthenticatedAmbassadorIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/u/$id': {
       id: '/_authenticated/u/$id'
       path: '/u/$id'
@@ -508,6 +541,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCommunityIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ambassador/apply': {
+      id: '/_authenticated/ambassador/apply'
+      path: '/ambassador/apply'
+      fullPath: '/ambassador/apply'
+      preLoaderRoute: typeof AuthenticatedAmbassadorApplyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -549,6 +589,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
+  AuthenticatedAmbassadorApplyRoute: typeof AuthenticatedAmbassadorApplyRoute
   AuthenticatedCommunityIdRoute: typeof AuthenticatedCommunityIdRoute
   AuthenticatedPostIdRoute: typeof AuthenticatedPostIdRoute
   AuthenticatedRedeemAirtimeRoute: typeof AuthenticatedRedeemAirtimeRoute
@@ -556,6 +597,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSchoolSchoolIdRoute: typeof AuthenticatedSchoolSchoolIdRoute
   AuthenticatedTagTagRoute: typeof AuthenticatedTagTagRoute
   AuthenticatedUIdRoute: typeof AuthenticatedUIdRoute
+  AuthenticatedAmbassadorIndexRoute: typeof AuthenticatedAmbassadorIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -570,6 +612,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedWalletRoute: AuthenticatedWalletRoute,
+  AuthenticatedAmbassadorApplyRoute: AuthenticatedAmbassadorApplyRoute,
   AuthenticatedCommunityIdRoute: AuthenticatedCommunityIdRoute,
   AuthenticatedPostIdRoute: AuthenticatedPostIdRoute,
   AuthenticatedRedeemAirtimeRoute: AuthenticatedRedeemAirtimeRoute,
@@ -577,6 +620,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSchoolSchoolIdRoute: AuthenticatedSchoolSchoolIdRoute,
   AuthenticatedTagTagRoute: AuthenticatedTagTagRoute,
   AuthenticatedUIdRoute: AuthenticatedUIdRoute,
+  AuthenticatedAmbassadorIndexRoute: AuthenticatedAmbassadorIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -590,13 +634,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
