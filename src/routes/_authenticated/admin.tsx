@@ -389,6 +389,105 @@ function AdminPage() {
           )}
         </div>
       )}
+
+      {tab === "ambassadors" && (
+        <div className="space-y-6">
+          <section>
+            <h2 className="mb-2 font-display text-xl">Pending applications</h2>
+            <div className="space-y-3">
+              {applications.data?.length === 0 && (
+                <div className="rounded-2xl border border-dashed border-border/60 p-6 text-sm text-muted-foreground">No pending applications.</div>
+              )}
+              {applications.data?.map((a) => {
+                const applicant = Array.isArray(a.applicant) ? a.applicant[0] : a.applicant;
+                const school = Array.isArray(a.school) ? a.school[0] : a.school;
+                return (
+                  <div key={a.id} className="rounded-2xl border border-border/60 bg-card p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <Link to="/u/$id" params={{ id: applicant?.id ?? "" }} className="font-medium text-primary hover:underline">
+                          {applicant?.display_name ?? "Unknown"}
+                        </Link>
+                        <p className="text-xs text-muted-foreground">
+                          {a.scope_type}{school ? ` · ${school.short_name}` : ""} · {timeAgo(a.created_at)}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="mt-2 whitespace-pre-wrap text-sm">{a.motivation}</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Button size="sm" onClick={() => doReview.mutate({ applicationId: a.id, decision: "approve" })}>Approve</Button>
+                      <Button size="sm" variant="outline" onClick={() => doReview.mutate({ applicationId: a.id, decision: "reject" })}>Reject</Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          <section>
+            <h2 className="mb-2 font-display text-xl">Active ambassadors</h2>
+            <div className="space-y-2">
+              {ambassadors.data?.length === 0 && (
+                <div className="rounded-2xl border border-dashed border-border/60 p-6 text-sm text-muted-foreground">No ambassadors yet.</div>
+              )}
+              {ambassadors.data?.map((a) => {
+                const u = Array.isArray(a.user) ? a.user[0] : a.user;
+                const school = Array.isArray(a.school) ? a.school[0] : a.school;
+                return (
+                  <div key={a.user_id} className="flex flex-wrap items-center gap-3 rounded-xl border border-border/60 bg-card p-3">
+                    <div className="min-w-0 flex-1">
+                      <Link to="/u/$id" params={{ id: u?.id ?? "" }} className="font-medium hover:underline">
+                        {u?.display_name ?? "Unknown"}
+                      </Link>
+                      <p className="text-xs text-muted-foreground">
+                        {a.tier} · {a.scope_type}{school ? ` · ${school.short_name}` : ""} · {a.status}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {a.tier !== "senior" && (
+                        <Button size="sm" variant="secondary" onClick={() => doTier.mutate({ userId: a.user_id, tier: "senior" })}>Promote → Senior</Button>
+                      )}
+                      {a.tier !== "regional_lead" && (
+                        <Button size="sm" variant="secondary" onClick={() => doTier.mutate({ userId: a.user_id, tier: "regional_lead" })}>→ Regional Lead</Button>
+                      )}
+                      {a.status === "active" ? (
+                        <Button size="sm" variant="outline" onClick={() => {
+                          const reason = window.prompt("Reason for suspension?") ?? undefined;
+                          if (reason !== undefined) doStatus.mutate({ userId: a.user_id, status: "suspended", reason });
+                        }}>Suspend</Button>
+                      ) : (
+                        <Button size="sm" onClick={() => doStatus.mutate({ userId: a.user_id, status: "active" })}>Reinstate</Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-border/60 bg-card p-4">
+            <h2 className="mb-2 font-display text-xl">Publish announcement</h2>
+            <div className="space-y-2">
+              <Input placeholder="Title" value={annTitle} onChange={(e) => setAnnTitle(e.target.value)} />
+              <Textarea placeholder="Message to all ambassadors…" value={annBody} onChange={(e) => setAnnBody(e.target.value)} rows={4} />
+              <Button onClick={() => doPublish.mutate()} disabled={doPublish.isPending || annTitle.length < 2 || annBody.length < 2}>Publish</Button>
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-border/60 bg-card p-4">
+            <h2 className="mb-2 font-display text-xl">Create ambassador task</h2>
+            <div className="space-y-2">
+              <Input placeholder="Task title" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} />
+              <Textarea placeholder="What should ambassadors do?" value={taskDesc} onChange={(e) => setTaskDesc(e.target.value)} rows={4} />
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-muted-foreground">Reward (Campoints)</label>
+                <Input type="number" min={0} value={taskReward} onChange={(e) => setTaskReward(parseInt(e.target.value || "0", 10))} className="w-32" />
+              </div>
+              <Button onClick={() => doCreateTask.mutate()} disabled={doCreateTask.isPending || taskTitle.length < 2 || taskDesc.length < 2}>Create task</Button>
+            </div>
+          </section>
+        </div>
+      )}
     </AppShell>
   );
 }
