@@ -233,7 +233,10 @@ function AdminPage() {
 
   return (
     <AppShell>
-      <h1 className="mb-2 font-display text-3xl">Admin</h1>
+      <div className="mb-2 flex items-center justify-between">
+        <h1 className="font-display text-3xl">Admin</h1>
+        <OverseerLink />
+      </div>
       <div className="mb-6 flex flex-wrap gap-2 border-b border-border/60">
         {([
           ["reports", `Moderation${reports.data ? ` · ${reports.data.length}` : ""}`],
