@@ -421,7 +421,7 @@ export const overseerListReports = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false })
       .limit(PAGE);
     if (data.cursor) q = q.lt("created_at", data.cursor);
-    q = q.eq("status", data.status ?? "open");
+    q = q.eq("status", (data.status ?? "open") as never);
     const { data: rows, error } = await q;
     if (error) throw error;
     return rows ?? [];
