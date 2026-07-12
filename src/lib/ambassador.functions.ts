@@ -322,15 +322,6 @@ export const adminReviewApplication = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-    const { error: appUpErr } = await supabaseAdmin.from("ambassador_applications").update({
-      status: "approved", reviewer_id: context.userId, review_notes: data.notes ?? null,
-    }).eq("id", app.id);
-    if (appUpErr) throw new Error(appUpErr.message);
-
-    // Welcome bonus
-    await award(app.user_id, "ambassador_bonus", 500, "ambassador", app.user_id, { event: "approved" });
-    return { ok: true };
-  });
 
 export const adminSetAmbassadorTier = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
