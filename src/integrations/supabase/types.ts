@@ -1414,7 +1414,7 @@ export type Database = {
       ambassador_status: "active" | "suspended"
       ambassador_task_status: "submitted" | "approved" | "rejected"
       ambassador_tier: "ambassador" | "senior" | "regional_lead"
-      app_role: "admin" | "moderator" | "user"
+      app_role: "admin" | "moderator" | "user" | "owner"
       campoint_reason:
         | "daily_checkin"
         | "streak_bonus"
@@ -1586,7 +1586,7 @@ export const Constants = {
       ambassador_status: ["active", "suspended"],
       ambassador_task_status: ["submitted", "approved", "rejected"],
       ambassador_tier: ["ambassador", "senior", "regional_lead"],
-      app_role: ["admin", "moderator", "user"],
+      app_role: ["admin", "moderator", "user", "owner"],
       campoint_reason: [
         "daily_checkin",
         "streak_bonus",
