@@ -20,6 +20,7 @@ function ProfilePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isMe = user?.id === id;
+  const [editOpen, setEditOpen] = useState(false);
 
   const profile = useQuery({
     queryKey: ["profile-page", id],
