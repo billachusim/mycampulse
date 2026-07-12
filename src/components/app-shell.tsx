@@ -53,18 +53,51 @@ export function AppShell({ children }: { children: ReactNode }) {
     { to: "/wallet", label: "Wallet", icon: Coins },
   ];
 
+  const TOP_LEVEL = ["/home", "/discover", "/connections", "/messages", "/wallet", "/auth", "/onboarding"];
+  const showBack = !TOP_LEVEL.includes(pathname);
+
+  function parentOf(path: string): string {
+    if (path.startsWith("/redeem")) return "/wallet";
+    if (path.startsWith("/events/new")) return "/events";
+    if (path.startsWith("/market/new")) return "/market";
+    if (path.startsWith("/ambassador")) return "/home";
+    if (path.startsWith("/admin") || path.startsWith("/overseer")) return "/home";
+    const parts = path.split("/").filter(Boolean);
+    if (parts.length > 1) return "/" + parts.slice(0, -1).join("/");
+    return "/home";
+  }
+
+  function handleBack() {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.history.back();
+    } else {
+      router.navigate({ to: parentOf(pathname) });
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/85 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-          <Link to="/home" className="flex items-center gap-2">
-            <BrandLogo size={32} withWordmark wordmarkClassName="text-xl" />
-            {profile?.school && (
-              <span className="ml-2 hidden rounded-full bg-secondary px-2 py-0.5 text-xs text-secondary-foreground sm:inline">
-                {profile.school.short_name}
-              </span>
+          <div className="flex items-center gap-1">
+            {showBack && (
+              <button
+                onClick={handleBack}
+                className="-ml-1 rounded-md p-2 text-muted-foreground hover:bg-secondary hover:text-foreground"
+                aria-label="Back"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
             )}
-          </Link>
+            <Link to="/home" className="flex items-center gap-2">
+              <BrandLogo size={32} withWordmark wordmarkClassName="text-xl" />
+              {profile?.school && (
+                <span className="ml-2 hidden rounded-full bg-secondary px-2 py-0.5 text-xs text-secondary-foreground sm:inline">
+                  {profile.school.short_name}
+                </span>
+              )}
+            </Link>
+          </div>
           <div className="flex items-center gap-1">
             <Link
               to="/wallet"
