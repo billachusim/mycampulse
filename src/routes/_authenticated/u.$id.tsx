@@ -1,10 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/app-shell";
 import { PostCard, POST_SELECT, type FeedPost } from "@/components/post-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { EditProfileDialog } from "@/components/edit-profile-dialog";
 import { useAuthUser, initials } from "@/lib/profile";
 import { toast } from "sonner";
 
@@ -18,6 +20,7 @@ function ProfilePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isMe = user?.id === id;
+  const [editOpen, setEditOpen] = useState(false);
 
   const profile = useQuery({
     queryKey: ["profile-page", id],
@@ -102,6 +105,11 @@ function ProfilePage() {
               </p>
               {p.bio && <p className="mt-2 text-sm">{p.bio}</p>}
             </div>
+            {isMe && (
+              <Button variant="secondary" size="sm" onClick={() => setEditOpen(true)}>
+                Edit profile
+              </Button>
+            )}
           </div>
           {!isMe && user && (
             <div className="mt-4 flex gap-2">
@@ -129,6 +137,16 @@ function ProfilePage() {
           <p className="text-sm text-muted-foreground">No posts yet.</p>
         )}
       </div>
+      {isMe && p && (
+        <EditProfileDialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          userId={id}
+          displayName={p.display_name}
+          bio={p.bio}
+          avatarUrl={p.avatar_url}
+        />
+      )}
     </AppShell>
   );
 }
