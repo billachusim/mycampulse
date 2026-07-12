@@ -34,6 +34,7 @@ import { Route as AuthenticatedPostIdRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedMarketNewRouteImport } from './routes/_authenticated/market.new'
 import { Route as AuthenticatedEventsNewRouteImport } from './routes/_authenticated/events.new'
 import { Route as AuthenticatedCommunityIdRouteImport } from './routes/_authenticated/community.$id'
+import { Route as AuthenticatedAmbassadorApplyRouteImport } from './routes/_authenticated/ambassador.apply'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -166,6 +167,12 @@ const AuthenticatedCommunityIdRoute =
     path: '/community/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAmbassadorApplyRoute =
+  AuthenticatedAmbassadorApplyRouteImport.update({
+    id: '/ambassador/apply',
+    path: '/ambassador/apply',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -181,6 +188,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/wallet': typeof AuthenticatedWalletRoute
+  '/ambassador/apply': typeof AuthenticatedAmbassadorApplyRoute
   '/community/$id': typeof AuthenticatedCommunityIdRoute
   '/events/new': typeof AuthenticatedEventsNewRoute
   '/market/new': typeof AuthenticatedMarketNewRoute
@@ -205,6 +213,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/wallet': typeof AuthenticatedWalletRoute
+  '/ambassador/apply': typeof AuthenticatedAmbassadorApplyRoute
   '/community/$id': typeof AuthenticatedCommunityIdRoute
   '/events/new': typeof AuthenticatedEventsNewRoute
   '/market/new': typeof AuthenticatedMarketNewRoute
@@ -233,6 +242,7 @@ export interface FileRoutesById {
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
+  '/_authenticated/ambassador/apply': typeof AuthenticatedAmbassadorApplyRoute
   '/_authenticated/community/$id': typeof AuthenticatedCommunityIdRoute
   '/_authenticated/events/new': typeof AuthenticatedEventsNewRoute
   '/_authenticated/market/new': typeof AuthenticatedMarketNewRoute
@@ -261,6 +271,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/settings'
     | '/wallet'
+    | '/ambassador/apply'
     | '/community/$id'
     | '/events/new'
     | '/market/new'
@@ -285,6 +296,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/settings'
     | '/wallet'
+    | '/ambassador/apply'
     | '/community/$id'
     | '/events/new'
     | '/market/new'
@@ -312,6 +324,7 @@ export interface FileRouteTypes {
     | '/_authenticated/onboarding'
     | '/_authenticated/settings'
     | '/_authenticated/wallet'
+    | '/_authenticated/ambassador/apply'
     | '/_authenticated/community/$id'
     | '/_authenticated/events/new'
     | '/_authenticated/market/new'
@@ -508,6 +521,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCommunityIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ambassador/apply': {
+      id: '/_authenticated/ambassador/apply'
+      path: '/ambassador/apply'
+      fullPath: '/ambassador/apply'
+      preLoaderRoute: typeof AuthenticatedAmbassadorApplyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -549,6 +569,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
+  AuthenticatedAmbassadorApplyRoute: typeof AuthenticatedAmbassadorApplyRoute
   AuthenticatedCommunityIdRoute: typeof AuthenticatedCommunityIdRoute
   AuthenticatedPostIdRoute: typeof AuthenticatedPostIdRoute
   AuthenticatedRedeemAirtimeRoute: typeof AuthenticatedRedeemAirtimeRoute
@@ -570,6 +591,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedWalletRoute: AuthenticatedWalletRoute,
+  AuthenticatedAmbassadorApplyRoute: AuthenticatedAmbassadorApplyRoute,
   AuthenticatedCommunityIdRoute: AuthenticatedCommunityIdRoute,
   AuthenticatedPostIdRoute: AuthenticatedPostIdRoute,
   AuthenticatedRedeemAirtimeRoute: AuthenticatedRedeemAirtimeRoute,
