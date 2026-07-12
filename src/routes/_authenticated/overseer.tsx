@@ -284,10 +284,6 @@ function UserSheet({ userId, onClose }: { userId: string; onClose: () => void })
   );
 }
 
-// ---------- generic paged list panel factory ----------
-function useCursorQuery<T>(key: unknown[], fetcher: () => Promise<T[]>) {
-  return useQuery({ queryKey: key, queryFn: fetcher, staleTime: 30_000 });
-}
 
 // ---------- Posts ----------
 function PostsPanel() {
